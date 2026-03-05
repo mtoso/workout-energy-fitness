@@ -1,0 +1,5 @@
+@layer components {
+  .app-shell {
+    @apply relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white font-sans selection:bg-emerald-200;
+  }
+}

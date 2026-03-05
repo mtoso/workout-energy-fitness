@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- Evita lo zoom indesiderato quando l'utente tocca gli input (essenziale per l'effetto nativo) -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+
+    <title>Workout Energy Fitness</title>
+
+    <!-- === TAG SPECIFICI PER iOS WEP APP === -->
+
+    <!-- 1. Abilita la modalità "schermo intero" rimuovendo l'interfaccia di Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <!-- 2. Definisce lo stile della barra di stato del telefono (batteria, segnale, ecc.) -->
+    <!-- Puoi usare "default", "black", o "black-translucent" -->
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+
+    <!-- 3. Il nome breve che apparirà sotto l'icona sulla Home Screen -->
+    <meta name="apple-mobile-web-app-title" content="EnergyFitness" />
+
+    <!-- 4. L'icona dell'app. Crea un file PNG quadrato (es. 180x180 px) e salvalo nella cartella public -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

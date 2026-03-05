@@ -1,0 +1,44 @@
+import { FileText, Home, User } from 'lucide-react';
+
+interface BottomNavProps {
+  currentScreen: string;
+  onNavigate: (screen: string) => void;
+}
+
+export const BottomNav = ({ currentScreen, onNavigate }: BottomNavProps) => (
+  <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-zinc-100 px-8 py-3 flex justify-between items-center pb-6 z-40">
+    <button
+      onClick={() => onNavigate('home')}
+      className={`flex flex-col items-center p-2 transition-colors ${
+        currentScreen === 'home'
+          ? 'text-zinc-900'
+          : 'text-zinc-400 hover:text-zinc-600'
+      }`}
+    >
+      <Home size={24} strokeWidth={currentScreen === 'home' ? 2.5 : 2} />
+      <span className="text-[10px] mt-1.5 font-bold tracking-wide">HOME</span>
+    </button>
+    <button
+      onClick={() => onNavigate('scheda')}
+      className={`flex flex-col items-center p-2 transition-colors ${
+        currentScreen === 'scheda'
+          ? 'text-zinc-900'
+          : 'text-zinc-400 hover:text-zinc-600'
+      }`}
+    >
+      <FileText size={24} strokeWidth={currentScreen === 'scheda' ? 2.5 : 2} />
+      <span className="text-[10px] mt-1.5 font-bold tracking-wide">SCHEDA</span>
+    </button>
+    <button
+      onClick={() => onNavigate('profile')}
+      className={`flex flex-col items-center p-2 transition-colors ${
+        currentScreen === 'profile'
+          ? 'text-zinc-900'
+          : 'text-zinc-400 hover:text-zinc-600'
+      }`}
+    >
+      <User size={24} strokeWidth={currentScreen === 'profile' ? 2.5 : 2} />
+      <span className="text-[10px] mt-1.5 font-bold tracking-wide">PROFILO</span>
+    </button>
+  </div>
+);
