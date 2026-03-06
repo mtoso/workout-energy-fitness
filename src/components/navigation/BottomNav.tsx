@@ -1,8 +1,10 @@
 import { FileText, Home, User } from 'lucide-react';
 
+type ScreenName = 'home' | 'scheda' | 'profile';
+
 interface BottomNavProps {
-  currentScreen: string;
-  onNavigate: (screen: string) => void;
+  currentScreen: ScreenName;
+  onNavigate: (screen: ScreenName) => void;
 }
 
 export const BottomNav = ({ currentScreen, onNavigate }: BottomNavProps) => (

@@ -4,18 +4,20 @@ import defaultProfileLogo from '../../assets/profile-default-logo.png';
 import type { Exercise, WorkoutDay } from '../../types/workout';
 
 interface HomeScreenProps {
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: 'home' | 'scheda' | 'profile') => void;
   onStartWorkout: (day: WorkoutDay, ex: Exercise | null) => void;
   schedaData: WorkoutDay[];
+  displayName: string;
 }
 
 export const HomeScreen = ({
   onNavigate,
   onStartWorkout,
   schedaData,
+  displayName,
 }: HomeScreenProps) => {
   const currentWeight = WEIGHT_HISTORY[WEIGHT_HISTORY.length - 1];
-  const todayWorkout = schedaData[0];
+  const todayWorkout = schedaData[0] ?? null;
 
   return (
     <div className="flex-1 overflow-y-auto bg-zinc-50 pb-24 scrollbar-hide min-h-0">
@@ -23,7 +25,7 @@ export const HomeScreen = ({
         <div>
           <p className="text-zinc-500 font-medium">Ciao,</p>
           <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">
-            Mattia
+            {displayName}
           </h1>
         </div>
         <button
@@ -49,25 +51,36 @@ export const HomeScreen = ({
               <div className="bg-zinc-800/50 w-fit px-3 py-1 rounded-full text-xs font-semibold text-emerald-400 mb-4 flex items-center gap-1.5">
                 <FileText size={14} /> Scheda Attuale
               </div>
-              <h3 className="text-2xl font-bold mb-1">Massa 6 Settimane</h3>
-              <p className="text-zinc-400 text-sm mb-6">
-                Oggi: {todayWorkout.name} - {todayWorkout.focus}
-              </p>
+              {todayWorkout ? (
+                <>
+                  <h3 className="text-2xl font-bold mb-1">Massa 6 Settimane</h3>
+                  <p className="text-zinc-400 text-sm mb-6">
+                    Oggi: {todayWorkout.name} - {todayWorkout.focus}
+                  </p>
 
-              <div className="flex flex-col gap-3 mt-4">
-                <button
-                  onClick={() => onStartWorkout(todayWorkout, null)}
-                  className="w-full bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
-                >
-                  <Play size={18} fill="currentColor" /> Inizia Ora
-                </button>
-                <button
-                  onClick={() => onNavigate('scheda')}
-                  className="w-full bg-zinc-800 text-white font-medium py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
-                >
-                  Vedi tutta la scheda
-                </button>
-              </div>
+                  <div className="flex flex-col gap-3 mt-4">
+                    <button
+                      onClick={() => onStartWorkout(todayWorkout, null)}
+                      className="w-full bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
+                    >
+                      <Play size={18} fill="currentColor" /> Inizia Ora
+                    </button>
+                    <button
+                      onClick={() => onNavigate('scheda')}
+                      className="w-full bg-zinc-800 text-white font-medium py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
+                    >
+                      Vedi tutta la scheda
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold mb-1">Nessuna scheda</h3>
+                  <p className="text-zinc-400 text-sm mb-6">
+                    Non hai ancora una scheda assegnata. Contatta il tuo admin.
+                  </p>
+                </>
+              )}
             </div>
             <Dumbbell className="absolute -right-4 -bottom-4 text-zinc-800 w-32 h-32 opacity-50 rotate-12 pointer-events-none" />
           </div>

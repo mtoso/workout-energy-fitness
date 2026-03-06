@@ -1,16 +1,48 @@
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, LogOut, Plus, Shield } from 'lucide-react';
 import { ProgressChart } from '../charts/ProgressChart';
 import { WEIGHT_HISTORY } from '../../data/workout-data';
 
-export const ProfileScreen = () => {
+interface ProfileScreenProps {
+  userEmail: string;
+  onLogout: () => void;
+  showAdminEntry?: boolean;
+  onOpenAdmin?: () => void;
+}
+
+export const ProfileScreen = ({
+  userEmail,
+  onLogout,
+  showAdminEntry = false,
+  onOpenAdmin,
+}: ProfileScreenProps) => {
   const currentStat = WEIGHT_HISTORY[WEIGHT_HISTORY.length - 1];
 
   return (
     <div className="flex-1 bg-zinc-50 pb-24 overflow-y-auto min-h-0">
       <div className="px-6 pt-16 pb-8 bg-white rounded-b-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight mb-6">
-          I tuoi Progressi
-        </h1>
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight mb-1">
+              I tuoi Progressi
+            </h1>
+            <p className="text-sm text-zinc-500">{userEmail}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="shrink-0 text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 active:scale-[0.98] transition"
+          >
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
+
+        {showAdminEntry && onOpenAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className="mb-6 w-full bg-amber-100 text-amber-900 px-4 py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition"
+          >
+            <Shield size={16} /> Apri Backoffice Admin
+          </button>
+        )}
 
         <div className="flex gap-4">
           <div className="flex-1 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">

@@ -21,6 +21,17 @@ export interface WorkoutDay {
   exercises: Exercise[];
 }
 
+export interface WorkoutPlan {
+  id: string;
+  title: string;
+  days: WorkoutDay[];
+}
+
+export interface WorkoutPlanInput {
+  title: string;
+  days: WorkoutDay[];
+}
+
 export interface WeightRecord {
   id: number;
   date: string;

@@ -5,7 +5,6 @@ import { ActiveWorkoutScreen } from './components/overlays/ActiveWorkoutScreen';
 import { HomeScreen } from './components/screens/HomeScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { SchedaScreen } from './components/screens/SchedaScreen';
-import { INITIAL_SCHEDA_DATA } from './data/workout-data';
 import { useScreenWakeLock } from './hooks/useScreenWakeLock';
 import type { Exercise, WorkoutDay } from './types/workout';
 
@@ -19,27 +18,40 @@ interface ActiveWorkoutData {
   initialExercise: Exercise | null;
 }
 
+type AppScreen = 'home' | 'scheda' | 'profile';
+
+interface WorkoutAppProps {
+  currentScreen: AppScreen;
+  onNavigate: (screen: AppScreen) => void;
+  initialSchedaData: WorkoutDay[];
+  userEmail: string;
+  isAdmin: boolean;
+  onOpenAdmin: () => void;
+  onLogout: () => void;
+}
+
 const ACTIVE_SCHEDA_DAY_STORAGE_KEY = 'workout-active-scheda-day-id';
 
-export default function App() {
+export default function App({
+  currentScreen,
+  onNavigate,
+  initialSchedaData,
+  userEmail,
+  isAdmin,
+  onOpenAdmin,
+  onLogout,
+}: WorkoutAppProps) {
   useScreenWakeLock(true);
 
-  const [currentScreen, setCurrentScreen] = useState<string>('home');
-  const [schedaData, setSchedaData] =
-    useState<WorkoutDay[]>(INITIAL_SCHEDA_DATA);
+  const [schedaData, setSchedaData] = useState<WorkoutDay[]>(initialSchedaData);
   const [selectedSchedaDayId, setSelectedSchedaDayId] = useState<number>(() => {
-    const fallbackDayId = INITIAL_SCHEDA_DATA[0]?.id ?? 1;
-    if (typeof window === 'undefined') return fallbackDayId;
+    if (typeof window === 'undefined') return 1;
 
     const storedValue = window.localStorage.getItem(
       ACTIVE_SCHEDA_DAY_STORAGE_KEY
     );
     const parsedValue = Number(storedValue);
-    const isStoredDayValid =
-      Number.isInteger(parsedValue) &&
-      INITIAL_SCHEDA_DATA.some((day) => day.id === parsedValue);
-
-    return isStoredDayValid ? parsedValue : fallbackDayId;
+    return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : 1;
   });
   const [completedExerciseIdsByDay, setCompletedExerciseIdsByDay] =
     useState<Record<number, string[]>>({});
@@ -47,11 +59,6 @@ export default function App() {
     useState<SelectedExerciseData | null>(null);
   const [activeWorkoutData, setActiveWorkoutData] =
     useState<ActiveWorkoutData | null>(null);
-
-  const handleNavigate = (screen: string) => {
-    setCurrentScreen(screen);
-    window.scrollTo(0, 0);
-  };
 
   const handleUpdateDay = (dayId: number, newExercises: Exercise[]) => {
     setSchedaData((prev) =>
@@ -90,7 +97,6 @@ export default function App() {
 
   const handleStartWorkout = useCallback(
     (day: WorkoutDay, initialExercise: Exercise | null) => {
-      // Reset completion markers for this day when a new workout starts.
       setCompletedExerciseIdsByDay((prev) => ({ ...prev, [day.id]: [] }));
       setActiveWorkoutData({ day, initialExercise });
     },
@@ -118,9 +124,10 @@ export default function App() {
     <div className="app-shell">
       {currentScreen === 'home' && (
         <HomeScreen
-          onNavigate={handleNavigate}
+          onNavigate={onNavigate}
           onStartWorkout={handleStartWorkout}
           schedaData={schedaData}
+          displayName={userEmail.split('@')[0] ?? userEmail}
         />
       )}
 
@@ -138,7 +145,14 @@ export default function App() {
         />
       )}
 
-      {currentScreen === 'profile' && <ProfileScreen />}
+      {currentScreen === 'profile' && (
+        <ProfileScreen
+          userEmail={userEmail}
+          onLogout={onLogout}
+          showAdminEntry={isAdmin}
+          onOpenAdmin={onOpenAdmin}
+        />
+      )}
 
       {selectedExerciseData && (
         <ExerciseDetailModal
@@ -165,7 +179,7 @@ export default function App() {
         />
       )}
 
-      <BottomNav currentScreen={currentScreen} onNavigate={handleNavigate} />
+      <BottomNav currentScreen={currentScreen} onNavigate={onNavigate} />
     </div>
   );
 }

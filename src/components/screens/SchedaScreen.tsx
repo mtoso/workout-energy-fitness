@@ -1,5 +1,12 @@
-import { ChevronDown, ChevronRight, ChevronUp, Clock, Edit2, Play } from 'lucide-react';
-import { useState } from 'react';
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  Edit2,
+  Play,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import type { Exercise, WorkoutDay } from '../../types/workout';
 
 interface SchedaScreenProps {
@@ -23,11 +30,29 @@ export const SchedaScreen = ({
 }: SchedaScreenProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  const activeDayIdx = Math.max(
-    0,
-    schedaData.findIndex((day) => day.id === activeDayId)
-  );
-  const activeDay = schedaData[activeDayIdx];
+  const activeDay = useMemo(() => {
+    if (schedaData.length === 0) return null;
+
+    const activeDayIdx = Math.max(
+      0,
+      schedaData.findIndex((day) => day.id === activeDayId)
+    );
+    return schedaData[activeDayIdx];
+  }, [activeDayId, schedaData]);
+
+  if (!activeDay) {
+    return (
+      <div className="flex-1 flex flex-col bg-zinc-50 relative min-h-0 px-6 pt-20">
+        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight mb-3">
+          Scheda Attuale
+        </h1>
+        <p className="text-zinc-500">
+          Nessuna scheda disponibile. Chiedi al tuo admin di assegnarti un piano.
+        </p>
+      </div>
+    );
+  }
+
   const completedIds = new Set(completedExerciseIdsByDay[activeDay.id] ?? []);
 
   const moveUp = (index: number) => {
