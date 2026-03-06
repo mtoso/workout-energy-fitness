@@ -9,5 +9,7 @@ database_id = "66959ce8-e822-444b-b294-f5e7811d5a2e"
 migrations_dir = "migrations"
 
 [vars]
+GOOGLE_CLIENT_ID = "545615642066-het2k28s5182f0hmvtqm1umvi945d8tf.apps.googleusercontent.com"
 SESSION_COOKIE_NAME = "wef_session"
 SESSION_TTL_HOURS = "720"
+VITE_GOOGLE_CLIENT_ID = "545615642066-het2k28s5182f0hmvtqm1umvi945d8tf.apps.googleusercontent.com"
