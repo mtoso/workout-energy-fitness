@@ -1,11 +1,10 @@
 export type UserRole = 'admin' | 'customer';
-export type AuthProvider = 'email' | 'google' | 'apple';
+export type AuthProvider = 'email' | 'google';
 
 export interface Env {
   DB: D1Database;
   APP_BASE_URL?: string;
   GOOGLE_CLIENT_ID?: string;
-  APPLE_CLIENT_ID?: string;
   SESSION_COOKIE_NAME?: string;
   SESSION_TTL_HOURS?: string;
 }

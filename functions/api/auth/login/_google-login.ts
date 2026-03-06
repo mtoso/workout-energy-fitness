@@ -1,6 +1,6 @@
 import { issueSession } from '../../_lib/auth';
 import { readJson } from '../../_lib/http';
-import { verifyProviderToken } from '../../_lib/id-token';
+import { verifyGoogleToken } from '../../_lib/id-token';
 import { fail, json } from '../../_lib/response';
 import {
   attachIdentityToUser,
@@ -10,28 +10,24 @@ import {
 } from '../../_lib/users';
 import type { Env } from '../../_lib/types';
 
-interface ProviderLoginPayload {
+interface GoogleLoginPayload {
   idToken: string;
 }
 
-export const loginWithProvider = async (
-  request: Request,
-  env: Env,
-  provider: 'google' | 'apple'
-) => {
-  const bodyOrResponse = await readJson<ProviderLoginPayload>(request);
+export const loginWithGoogle = async (request: Request, env: Env) => {
+  const bodyOrResponse = await readJson<GoogleLoginPayload>(request);
   if (bodyOrResponse instanceof Response) return bodyOrResponse;
 
   const idToken = bodyOrResponse.idToken;
-  const identityOrResponse = await verifyProviderToken(provider, idToken, env);
+  const identityOrResponse = await verifyGoogleToken(idToken, env);
   if (identityOrResponse instanceof Response) return identityOrResponse;
 
-  const identity = identityOrResponse;
+  const googleIdentity = identityOrResponse;
 
   const existingIdentityUser = await getUserByIdentity(
     env,
-    provider,
-    identity.providerSubject
+    'google',
+    googleIdentity.googleSubject
   );
 
   if (existingIdentityUser) {
@@ -39,7 +35,7 @@ export const loginWithProvider = async (
       return fail(403, 'account_disabled', 'Account is disabled.');
     }
 
-    await touchIdentityLogin(env, provider, identity.providerSubject);
+    await touchIdentityLogin(env, 'google', googleIdentity.googleSubject);
     const { cookieHeader } = await issueSession(request, env, existingIdentityUser.id);
 
     return json(
@@ -57,7 +53,7 @@ export const loginWithProvider = async (
     );
   }
 
-  if (!identity.email || !identity.emailVerified) {
+  if (!googleIdentity.email || !googleIdentity.emailVerified) {
     return fail(
       403,
       'account_not_provisioned',
@@ -65,7 +61,15 @@ export const loginWithProvider = async (
     );
   }
 
-  const user = await findUserByEmail(env, identity.email);
+  if (!googleIdentity.isAuthoritativeEmail) {
+    return fail(
+      403,
+      'google_email_not_authoritative',
+      'Google can only auto-link Gmail or managed Google Workspace addresses. Use email login for this address.'
+    );
+  }
+
+  const user = await findUserByEmail(env, googleIdentity.email);
   if (!user) {
     return fail(
       403,
@@ -81,16 +85,16 @@ export const loginWithProvider = async (
   const linked = await attachIdentityToUser(
     env,
     user.id,
-    provider,
-    identity.providerSubject,
-    identity.emailVerified
+    'google',
+    googleIdentity.googleSubject,
+    googleIdentity.emailVerified
   );
 
   if (!linked) {
     const reloadedIdentityUser = await getUserByIdentity(
       env,
-      provider,
-      identity.providerSubject
+      'google',
+      googleIdentity.googleSubject
     );
 
     if (!reloadedIdentityUser) {
@@ -102,7 +106,7 @@ export const loginWithProvider = async (
     }
   }
 
-  await touchIdentityLogin(env, provider, identity.providerSubject);
+  await touchIdentityLogin(env, 'google', googleIdentity.googleSubject);
   const { cookieHeader } = await issueSession(request, env, user.id);
 
   return json(

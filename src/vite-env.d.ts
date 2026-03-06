@@ -3,8 +3,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_GOOGLE_CLIENT_ID?: string;
-  readonly VITE_APPLE_CLIENT_ID?: string;
-  readonly VITE_APPLE_REDIRECT_URI?: string;
 }
 
 declare global {
@@ -15,6 +13,10 @@ declare global {
   interface GoogleAccountsId {
     initialize(config: {
       client_id: string;
+      auto_select?: boolean;
+      button_auto_select?: boolean;
+      itp_support?: boolean;
+      use_fedcm_for_button?: boolean;
       callback: (response: GoogleCredentialResponse) => void;
     }): void;
     renderButton(
@@ -23,6 +25,7 @@ declare global {
     ): void;
     prompt(): void;
     cancel(): void;
+    disableAutoSelect(): void;
   }
 
   interface GoogleGlobal {
@@ -31,31 +34,8 @@ declare global {
     };
   }
 
-  interface AppleSignInResponse {
-    authorization?: {
-      id_token?: string;
-    };
-  }
-
-  interface AppleAuth {
-    init(options: {
-      clientId: string;
-      scope?: string;
-      redirectURI: string;
-      usePopup?: boolean;
-      state?: string;
-      nonce?: string;
-    }): void;
-    signIn(): Promise<AppleSignInResponse>;
-  }
-
-  interface AppleIdGlobal {
-    auth: AppleAuth;
-  }
-
   interface Window {
     google?: GoogleGlobal;
-    AppleID?: AppleIdGlobal;
   }
 }
 

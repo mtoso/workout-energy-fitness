@@ -1,10 +1,9 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { loginApple, loginEmail, loginGoogle } from '../lib/api/auth';
+import { loginEmail, loginGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
-import { getAppleIdToken, mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
-import { AppleSignInButton } from '../components/auth/AppleSignInButton';
+import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
 import { queryClient } from '../lib/query-client';
 
 const cardClass = 'bg-white border border-zinc-200 rounded-2xl p-5 space-y-4';
@@ -22,13 +21,6 @@ export const LoginPage = () => {
   const googleConfigError = !googleClientId
     ? 'Google login non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
-  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() ?? '';
-  const appleRedirectUri = useMemo(
-    () =>
-      import.meta.env.VITE_APPLE_REDIRECT_URI?.trim() ||
-      `${window.location.origin}/login`,
-    []
-  );
 
   const handleSuccess = async () => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -56,15 +48,6 @@ export const LoginPage = () => {
     },
   });
 
-  const appleMutation = useMutation({
-    mutationFn: loginApple,
-    onSuccess: () => {
-      void handleSuccess();
-    },
-    onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Login Apple fallito.');
-    },
-  });
   const handleGoogleCredential = useEffectEvent((idToken: string) => {
     setError(null);
     googleMutation.mutate({ idToken });
@@ -85,6 +68,7 @@ export const LoginPage = () => {
       container,
       clientId: googleClientId,
       buttonText: 'signin_with',
+      flow: 'signin',
       enableOneTap: true,
       onCredential: handleGoogleCredential,
       onError: handleGoogleSdkError,
@@ -104,31 +88,13 @@ export const LoginPage = () => {
     };
   }, [googleClientId]);
 
-  const handleAppleLogin = async () => {
-    if (!appleClientId) {
-      setError('Apple login non configurato (VITE_APPLE_CLIENT_ID mancante).');
-      return;
-    }
-
-    try {
-      setError(null);
-      const idToken = await getAppleIdToken({
-        clientId: appleClientId,
-        redirectUri: appleRedirectUri,
-      });
-      appleMutation.mutate({ idToken });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login Apple fallito.');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-zinc-100 py-10 px-4">
       <div className="max-w-xl mx-auto space-y-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-zinc-900">Accedi</h1>
           <p className="text-zinc-500 mt-2">
-            Login supportato: Email, Google, Apple
+            Login supportato: Email e Google
           </p>
         </div>
 
@@ -169,7 +135,8 @@ export const LoginPage = () => {
         <div className={cardClass}>
           <h2 className="font-semibold text-zinc-900">Google</h2>
           <p className="text-sm text-zinc-500">
-            Accesso con SDK Google Identity Services.
+            Accesso con Google Identity Services. Per il collegamento automatico
+            supportiamo account Gmail o Google Workspace gestiti.
           </p>
           <div ref={googleButtonRef} className="min-h-12" />
           {(googleConfigError || googleSetupError) && (
@@ -180,20 +147,6 @@ export const LoginPage = () => {
           {googleMutation.isPending && (
             <p className="text-sm text-zinc-500">Accesso Google in corso...</p>
           )}
-        </div>
-
-        <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Apple</h2>
-          <p className="text-sm text-zinc-500">
-            Accesso con SDK Sign in with Apple (popup).
-          </p>
-          <AppleSignInButton
-            label={appleMutation.isPending ? 'Accesso...' : 'Accedi con Apple'}
-            onClick={() => {
-              void handleAppleLogin();
-            }}
-            disabled={appleMutation.isPending}
-          />
         </div>
 
         <div className="text-center text-sm text-zinc-500">

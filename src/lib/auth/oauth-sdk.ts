@@ -1,9 +1,10 @@
 const GOOGLE_SDK_SRC = 'https://accounts.google.com/gsi/client';
-const APPLE_SDK_SRC =
-  'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
 
 const scriptPromises = new Map<string, Promise<void>>();
 const SCRIPT_STATUS_ATTR = 'data-sdk-load-status';
+let initializedGoogleClientId: string | null = null;
+let activeGoogleCredentialHandler: ((idToken: string) => void) | null = null;
+let activeGoogleErrorHandler: ((message: string) => void) | null = null;
 
 const loadExternalScript = (
   src: string,
@@ -70,10 +71,34 @@ const loadExternalScript = (
   return promise;
 };
 
+const ensureGoogleInitialized = (googleId: GoogleAccountsId, clientId: string) => {
+  if (initializedGoogleClientId === clientId) return;
+
+  googleId.initialize({
+    client_id: clientId,
+    auto_select: true,
+    button_auto_select: false,
+    itp_support: true,
+    use_fedcm_for_button: true,
+    callback: (response) => {
+      const token = response.credential?.trim();
+      if (!token) {
+        activeGoogleErrorHandler?.('Google non ha restituito un ID token valido.');
+        return;
+      }
+
+      activeGoogleCredentialHandler?.(token);
+    },
+  });
+
+  initializedGoogleClientId = clientId;
+};
+
 export const mountGoogleSignInButton = async ({
   container,
   clientId,
   buttonText,
+  flow,
   enableOneTap = false,
   onCredential,
   onError,
@@ -81,6 +106,7 @@ export const mountGoogleSignInButton = async ({
   container: HTMLElement;
   clientId: string;
   buttonText: 'signin_with' | 'continue_with' | 'signup_with';
+  flow: 'signin' | 'signup';
   enableOneTap?: boolean;
   onCredential: (idToken: string) => void;
   onError: (message: string) => void;
@@ -100,18 +126,9 @@ export const mountGoogleSignInButton = async ({
     throw new Error('Google SDK is unavailable.');
   }
 
-  googleId.initialize({
-    client_id: clientId,
-    callback: (response) => {
-      const token = response.credential?.trim();
-      if (!token) {
-        onError('Google non ha restituito un ID token valido.');
-        return;
-      }
-
-      onCredential(token);
-    },
-  });
+  ensureGoogleInitialized(googleId, clientId);
+  activeGoogleCredentialHandler = onCredential;
+  activeGoogleErrorHandler = onError;
 
   container.innerHTML = '';
   googleId.renderButton(container, {
@@ -121,6 +138,7 @@ export const mountGoogleSignInButton = async ({
     text: buttonText,
     shape: 'pill',
     logo_alignment: 'left',
+    state: flow,
     width: 320,
   });
 
@@ -133,46 +151,15 @@ export const mountGoogleSignInButton = async ({
     if (enableOneTap) {
       googleId.cancel();
     }
+    if (activeGoogleCredentialHandler === onCredential) {
+      activeGoogleCredentialHandler = null;
+    }
+    if (activeGoogleErrorHandler === onError) {
+      activeGoogleErrorHandler = null;
+    }
   };
 };
 
-export const getAppleIdToken = async ({
-  clientId,
-  redirectUri,
-}: {
-  clientId: string;
-  redirectUri: string;
-}) => {
-  if (!clientId.trim()) {
-    throw new Error('Apple client id is not configured.');
-  }
-
-  await loadExternalScript(
-    APPLE_SDK_SRC,
-    () => Boolean(window.AppleID?.auth),
-    'Apple'
-  );
-
-  const appleAuth = window.AppleID?.auth;
-  if (!appleAuth) {
-    throw new Error('Apple SDK is unavailable.');
-  }
-
-  appleAuth.init({
-    clientId,
-    scope: 'name email',
-    redirectURI: redirectUri,
-    usePopup: true,
-    state: crypto.randomUUID(),
-    nonce: crypto.randomUUID(),
-  });
-
-  const response = await appleAuth.signIn();
-  const idToken = response.authorization?.id_token?.trim();
-
-  if (!idToken) {
-    throw new Error('Apple non ha restituito un ID token valido.');
-  }
-
-  return idToken;
+export const disableGoogleAutoSelect = () => {
+  window.google?.accounts?.id.disableAutoSelect?.();
 };

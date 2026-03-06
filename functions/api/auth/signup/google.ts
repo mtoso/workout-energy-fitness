@@ -1,5 +1,5 @@
-import { signupWithProvider } from './_provider-signup';
+import { signupWithGoogle } from './_google-signup';
 import type { Env } from '../../_lib/types';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) =>
-  signupWithProvider(request, env, 'google');
+  signupWithGoogle(request, env);

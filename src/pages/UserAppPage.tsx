@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import App from '../App';
 import { logout } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
+import { disableGoogleAutoSelect } from '../lib/auth/oauth-sdk';
 import { myWorkoutQueryOptions, meQueryOptions } from '../lib/api/query-options';
 import { queryClient } from '../lib/query-client';
 
@@ -81,6 +82,7 @@ export const UserAppPage = ({ screen }: UserAppPageProps) => {
         void navigate({ to: '/admin/users' });
       }}
       onLogout={() => {
+        disableGoogleAutoSelect();
         logoutMutation.mutate();
       }}
     />

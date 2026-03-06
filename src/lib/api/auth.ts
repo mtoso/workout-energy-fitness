@@ -24,12 +24,6 @@ export const loginGoogle = (payload: { idToken: string }) =>
     body: JSON.stringify(payload),
   });
 
-export const loginApple = (payload: { idToken: string }) =>
-  apiFetch<AuthResponse>('/api/auth/login/apple', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-
 export const signupEmail = (payload: {
   inviteToken: string;
   email: string;
@@ -42,12 +36,6 @@ export const signupEmail = (payload: {
 
 export const signupGoogle = (payload: { inviteToken: string; idToken: string }) =>
   apiFetch<AuthResponse>('/api/auth/signup/google', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-
-export const signupApple = (payload: { inviteToken: string; idToken: string }) =>
-  apiFetch<AuthResponse>('/api/auth/signup/apple', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

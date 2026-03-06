@@ -3,6 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { logout } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
+import { disableGoogleAutoSelect } from '../lib/auth/oauth-sdk';
 import { adminUsersQueryOptions } from '../lib/api/query-options';
 import { createAdminInvite } from '../lib/api/workout';
 import { queryClient } from '../lib/query-client';
@@ -61,7 +62,10 @@ export const AdminUsersPage = () => {
               App utente
             </Link>
             <button
-              onClick={() => logoutMutation.mutate()}
+              onClick={() => {
+                disableGoogleAutoSelect();
+                logoutMutation.mutate();
+              }}
               className="bg-zinc-900 text-white px-4 py-2 rounded-xl font-semibold"
             >
               Logout

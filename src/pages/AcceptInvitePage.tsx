@@ -1,10 +1,9 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { signupApple, signupEmail, signupGoogle } from '../lib/api/auth';
+import { signupEmail, signupGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
-import { getAppleIdToken, mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
-import { AppleSignInButton } from '../components/auth/AppleSignInButton';
+import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
 import { queryClient } from '../lib/query-client';
 
 const cardClass = 'bg-white border border-zinc-200 rounded-2xl p-5 space-y-4';
@@ -27,13 +26,6 @@ export const AcceptInvitePage = () => {
   const googleConfigError = !googleClientId
     ? 'Google signup non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
-  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() ?? '';
-  const appleRedirectUri = useMemo(
-    () =>
-      import.meta.env.VITE_APPLE_REDIRECT_URI?.trim() ||
-      `${window.location.origin}/accept-invite`,
-    []
-  );
 
   const handleSuccess = async () => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -61,15 +53,6 @@ export const AcceptInvitePage = () => {
     },
   });
 
-  const appleMutation = useMutation({
-    mutationFn: signupApple,
-    onSuccess: () => {
-      void handleSuccess();
-    },
-    onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Signup Apple fallito.');
-    },
-  });
   const handleGoogleCredential = useEffectEvent((idToken: string) => {
     setError(null);
     googleMutation.mutate({ inviteToken, idToken });
@@ -92,6 +75,7 @@ export const AcceptInvitePage = () => {
       container,
       clientId: googleClientId,
       buttonText: 'signup_with',
+      flow: 'signup',
       onCredential: handleGoogleCredential,
       onError: handleGoogleSdkError,
     })
@@ -109,24 +93,6 @@ export const AcceptInvitePage = () => {
       cleanup?.();
     };
   }, [googleClientId, inviteToken]);
-
-  const handleAppleSignup = async () => {
-    if (!appleClientId) {
-      setError('Apple signup non configurato (VITE_APPLE_CLIENT_ID mancante).');
-      return;
-    }
-
-    try {
-      setError(null);
-      const idToken = await getAppleIdToken({
-        clientId: appleClientId,
-        redirectUri: appleRedirectUri,
-      });
-      appleMutation.mutate({ inviteToken, idToken });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup Apple fallito.');
-    }
-  };
 
   if (!inviteToken) {
     return (
@@ -193,7 +159,8 @@ export const AcceptInvitePage = () => {
         <div className={cardClass}>
           <h2 className="font-semibold text-zinc-900">Signup con Google</h2>
           <p className="text-sm text-zinc-500">
-            Registrazione con SDK Google Identity Services.
+            Registrazione con Google Identity Services. Supportata per account
+            Gmail o Google Workspace gestiti.
           </p>
           <div ref={googleButtonRef} className="min-h-12" />
           {(googleConfigError || googleSetupError) && (
@@ -204,22 +171,6 @@ export const AcceptInvitePage = () => {
           {googleMutation.isPending && (
             <p className="text-sm text-zinc-500">Registrazione Google in corso...</p>
           )}
-        </div>
-
-        <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Signup con Apple</h2>
-          <p className="text-sm text-zinc-500">
-            Registrazione con SDK Sign in with Apple (popup).
-          </p>
-          <AppleSignInButton
-            label={
-              appleMutation.isPending ? 'Registrazione...' : 'Registrati con Apple'
-            }
-            onClick={() => {
-              void handleAppleSignup();
-            }}
-            disabled={appleMutation.isPending}
-          />
         </div>
 
         <div className="text-center text-sm text-zinc-500">

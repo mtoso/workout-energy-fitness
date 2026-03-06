@@ -1,6 +1,6 @@
 # Workout Energy Fitness
 
-SPA React + API Cloudflare Pages Functions per gestione workout con auth multi-provider (Email, Google, Apple) e policy invite-only.
+SPA React + API Cloudflare Pages Functions per gestione workout con auth multi-provider (Email, Google) e policy invite-only.
 
 ## Stack
 
@@ -12,13 +12,14 @@ SPA React + API Cloudflare Pages Functions per gestione workout con auth multi-p
 
 - Login:
   - Email/password
-  - Google SDK (Google Identity Services)
+  - Google Identity Services
   - Google One Tap (pagina login)
-  - Apple SDK (Sign in with Apple popup)
 - Signup solo da invito:
   - Email/password
-  - Google SDK
-  - Apple SDK
+  - Google Identity Services
+- Nota Google:
+  - Login auto-link e signup Google sono consentiti per account Gmail o Google Workspace gestiti
+  - Per indirizzi email di terze parti non autorevoli su Google usare il flusso Email/password
 - RBAC:
   - `customer`
   - `admin` (può usare anche app utente)
@@ -42,11 +43,9 @@ SPA React + API Cloudflare Pages Functions per gestione workout con auth multi-p
 1. Crea database D1.
 2. Aggiorna `wrangler.toml`:
    - `database_id`
-   - eventuali `vars` (`APP_BASE_URL`, `GOOGLE_CLIENT_ID`, `APPLE_CLIENT_ID`)
+   - eventuali `vars` (`APP_BASE_URL`, `GOOGLE_CLIENT_ID`)
 3. Configura variabili frontend OAuth in `.env` (o build env su Cloudflare Pages):
    - `VITE_GOOGLE_CLIENT_ID`
-   - `VITE_APPLE_CLIENT_ID`
-   - `VITE_APPLE_REDIRECT_URI` (deve essere registrata anche su Apple Developer)
 4. Applica migrazioni:
 
 ```bash
