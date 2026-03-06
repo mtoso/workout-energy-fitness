@@ -22,16 +22,16 @@ export const LoginPage = () => {
     ? 'Google login non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
 
-  const handleSuccess = async () => {
+  const handleSuccess = async (role: 'admin' | 'customer') => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-    await navigate({ to: '/' });
+    await navigate({ to: role === 'admin' ? '/admin' : '/' });
   };
 
   const emailMutation = useMutation({
     mutationFn: loginEmail,
-    onSuccess: () => {
-      void handleSuccess();
+    onSuccess: (data) => {
+      void handleSuccess(data.user.role);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Login email fallito.');
@@ -40,8 +40,8 @@ export const LoginPage = () => {
 
   const googleMutation = useMutation({
     mutationFn: loginGoogle,
-    onSuccess: () => {
-      void handleSuccess();
+    onSuccess: (data) => {
+      void handleSuccess(data.user.role);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Login Google fallito.');

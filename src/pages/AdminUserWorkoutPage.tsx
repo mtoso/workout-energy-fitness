@@ -86,6 +86,12 @@ export const AdminUserWorkoutPage = () => {
           </div>
           <div className="flex gap-2">
             <Link
+              to="/admin"
+              className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2 rounded-xl font-semibold"
+            >
+              Dashboard
+            </Link>
+            <Link
               to="/admin/users"
               className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2 rounded-xl font-semibold"
             >

@@ -179,7 +179,12 @@ export default function App({
         />
       )}
 
-      <BottomNav currentScreen={currentScreen} onNavigate={onNavigate} />
+      <BottomNav
+        currentScreen={currentScreen}
+        onNavigate={onNavigate}
+        showAdminEntry={isAdmin}
+        onOpenAdmin={onOpenAdmin}
+      />
     </div>
   );
 }

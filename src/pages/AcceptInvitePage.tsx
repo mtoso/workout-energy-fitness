@@ -27,16 +27,16 @@ export const AcceptInvitePage = () => {
     ? 'Google signup non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
 
-  const handleSuccess = async () => {
+  const handleSuccess = async (role: 'admin' | 'customer') => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-    await navigate({ to: '/' });
+    await navigate({ to: role === 'admin' ? '/admin' : '/' });
   };
 
   const emailMutation = useMutation({
     mutationFn: signupEmail,
-    onSuccess: () => {
-      void handleSuccess();
+    onSuccess: (data) => {
+      void handleSuccess(data.user.role);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Signup email fallito.');
@@ -45,8 +45,8 @@ export const AcceptInvitePage = () => {
 
   const googleMutation = useMutation({
     mutationFn: signupGoogle,
-    onSuccess: () => {
-      void handleSuccess();
+    onSuccess: (data) => {
+      void handleSuccess(data.user.role);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Signup Google fallito.');
