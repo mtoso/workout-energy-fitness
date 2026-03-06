@@ -1,7 +1,17 @@
 import { argon2id } from '@noble/hashes/argon2.js';
-import { equalBytes } from '@noble/hashes/utils.js';
 
 const textEncoder = new TextEncoder();
+
+const equalBytes = (left: Uint8Array, right: Uint8Array) => {
+  if (left.length !== right.length) return false;
+
+  let mismatch = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    mismatch |= left[index] ^ right[index];
+  }
+
+  return mismatch === 0;
+};
 
 const toBase64Url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
