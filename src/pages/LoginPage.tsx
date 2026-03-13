@@ -1,13 +1,13 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import type { AuthUser } from '../types/auth';
 import { loginEmail, loginGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
 import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
 import { queryClient } from '../lib/query-client';
 
-const cardClass = 'bg-white border border-zinc-200 rounded-2xl p-5 space-y-4';
+const cardClass = 'bg-white border border-zinc-200 rounded-[2rem] p-6 md:p-8 shadow-sm space-y-4';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -70,6 +70,8 @@ export const LoginPage = () => {
       clientId: googleClientId,
       buttonText: 'signin_with',
       flow: 'signin',
+      locale: 'it',
+      width: Math.min(container.clientWidth || 360, 480),
       enableOneTap: true,
       onCredential: handleGoogleCredential,
       onError: handleGoogleSdkError,
@@ -90,11 +92,16 @@ export const LoginPage = () => {
   }, [googleClientId]);
 
   return (
-    <div className="min-h-screen bg-zinc-100 py-10 px-4">
-      <div className="max-w-xl mx-auto space-y-4">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-zinc-900">Accedi</h1>
-          <p className="text-zinc-500 mt-2">Login supportato: Email e Google</p>
+    <div className="min-h-screen bg-zinc-100 px-4 py-8 md:py-12">
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[1.75rem] bg-white border border-zinc-200 shadow-sm mb-4">
+            <img src="/favicon.svg" alt="EnergyFit" className="w-11 h-11" />
+          </div>
+          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-zinc-500 mb-2">
+            EnergyFit Pro
+          </p>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900">Accedi</h1>
         </div>
 
         {error && (
@@ -104,23 +111,22 @@ export const LoginPage = () => {
         )}
 
         <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Email + Password</h2>
           <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2"
+            className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
             placeholder="Email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
           <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2"
+            className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
             placeholder="Password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
           <button
-            className="w-full bg-zinc-900 text-white rounded-xl py-2.5 font-semibold disabled:opacity-50"
+            className="w-full bg-zinc-900 text-white rounded-2xl py-4 font-semibold text-lg disabled:opacity-50"
             onClick={() => {
               setError(null);
               emailMutation.mutate({ email, password });
@@ -129,27 +135,15 @@ export const LoginPage = () => {
           >
             {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
           </button>
-        </div>
-
-        <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Google</h2>
-          <p className="text-sm text-zinc-500">
-            Accesso con Google Identity Services. Il collegamento automatico usa account Gmail o Google Workspace gestiti.
-          </p>
-          <div ref={googleButtonRef} className="min-h-12" />
+          <div className="pt-1">
+            <div ref={googleButtonRef} className="min-h-12 w-full flex justify-center" />
+          </div>
           {(googleConfigError || googleSetupError) && (
             <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
           )}
           {googleMutation.isPending && (
             <p className="text-sm text-zinc-500">Accesso Google in corso...</p>
           )}
-        </div>
-
-        <div className="text-center text-sm text-zinc-500">
-          Hai un invito?{' '}
-          <Link to="/accept-invite" className="text-zinc-900 font-semibold underline">
-            Completa signup
-          </Link>
         </div>
       </div>
     </div>

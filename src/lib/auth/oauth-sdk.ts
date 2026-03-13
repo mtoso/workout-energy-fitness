@@ -99,6 +99,8 @@ export const mountGoogleSignInButton = async ({
   clientId,
   buttonText,
   flow,
+  locale = 'it',
+  width,
   enableOneTap = false,
   onCredential,
   onError,
@@ -107,6 +109,8 @@ export const mountGoogleSignInButton = async ({
   clientId: string;
   buttonText: 'signin_with' | 'continue_with' | 'signup_with';
   flow: 'signin' | 'signup';
+  locale?: string;
+  width?: number;
   enableOneTap?: boolean;
   onCredential: (idToken: string) => void;
   onError: (message: string) => void;
@@ -139,7 +143,8 @@ export const mountGoogleSignInButton = async ({
     shape: 'pill',
     logo_alignment: 'left',
     state: flow,
-    width: 320,
+    locale,
+    width: width ?? 320,
   });
 
   if (enableOneTap) {
