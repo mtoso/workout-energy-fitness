@@ -72,7 +72,7 @@ export const AdminWorkoutEditorPage = () => {
     },
     onError: (error) => {
       setSaveOk(null);
-      setSaveError(isApiError(error) ? error.message : 'Salvataggio fallito.');
+      setSaveError(isApiError(error) ? error.message : 'Salvataggio non riuscito.');
     },
   });
 
@@ -87,7 +87,7 @@ export const AdminWorkoutEditorPage = () => {
       }
     },
     onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Pubblicazione scheda fallita.');
+      setGeneralError(isApiError(error) ? error.message : 'Pubblicazione della scheda non riuscita.');
     },
   });
 
@@ -110,7 +110,7 @@ export const AdminWorkoutEditorPage = () => {
           params={{ userId }}
           className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto text-center"
         >
-          Torna workspace
+          Torna al profilo
         </Link>
       }
     >

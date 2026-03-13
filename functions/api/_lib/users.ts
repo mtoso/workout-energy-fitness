@@ -120,20 +120,20 @@ export const createInvitedUser = async (
   const expiresInHours = Number(input.expiresInHours);
 
   if (!normalizedEmail) {
-    return fail(400, 'invalid_email', 'Email is required.');
+    return fail(400, 'invalid_email', "L'email è obbligatoria.");
   }
 
   if (!['client', 'coach'].includes(input.userType)) {
-    return fail(400, 'invalid_user_type', 'User type must be client or coach.');
+    return fail(400, 'invalid_user_type', 'Il tipo utente deve essere cliente oppure coach.');
   }
 
   if (!Number.isFinite(expiresInHours) || expiresInHours <= 0 || expiresInHours > 24 * 30) {
-    return fail(400, 'invalid_expiry', 'Invite expiry must be between 1 and 720 hours.');
+    return fail(400, 'invalid_expiry', "La scadenza dell'invito deve essere compresa tra 1 e 720 ore.");
   }
 
   const existingUser = await findUserByEmail(env, normalizedEmail);
   if (existingUser) {
-    return fail(409, 'account_exists', 'A user with this email already exists.');
+    return fail(409, 'account_exists', 'Esiste già un utente con questa email.');
   }
 
   let coachUserId: string | null = null;
@@ -152,7 +152,7 @@ export const createInvitedUser = async (
       .first();
 
     if (!coach) {
-      return fail(400, 'invalid_coach', 'Assigned coach must be an existing coach user.');
+      return fail(400, 'invalid_coach', 'Il coach assegnato deve essere un utente coach esistente.');
     }
 
     coachUserId = input.coachUserId;
@@ -205,12 +205,12 @@ export const activateInvitedUser = async (
 ): Promise<{ userId: string } | Response> => {
   const normalizedEmail = normalizeEmail(email);
   if (normalizeEmail(invitedUser.email) !== normalizedEmail) {
-    return fail(400, 'email_mismatch', 'Invite email does not match supplied email.');
+    return fail(400, 'email_mismatch', "L'email dell'invito non corrisponde a quella inserita.");
   }
 
   if (identity.provider === 'email') {
     if (!password || password.length < 8) {
-      return fail(400, 'invalid_password', 'Password must be at least 8 characters.');
+      return fail(400, 'invalid_password', 'La password deve contenere almeno 8 caratteri.');
     }
   }
 
@@ -227,7 +227,7 @@ export const activateInvitedUser = async (
     .first();
 
   if (existingIdentity) {
-    return fail(409, 'identity_conflict', 'This identity is already linked to another account.');
+    return fail(409, 'identity_conflict', 'Questa identità è già collegata a un altro account.');
   }
 
   const statements = [

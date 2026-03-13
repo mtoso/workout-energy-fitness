@@ -4,7 +4,7 @@ export const readJson = async <T>(request: Request): Promise<T | Response> => {
   try {
     return (await request.json()) as T;
   } catch {
-    return fail(400, 'invalid_json', 'Request body must be valid JSON.');
+    return fail(400, 'invalid_json', 'Il corpo della richiesta deve essere un JSON valido.');
   }
 };
 

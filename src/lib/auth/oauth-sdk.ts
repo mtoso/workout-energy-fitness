@@ -50,7 +50,7 @@ const loadExternalScript = (
         });
         existingScript.addEventListener(
           'error',
-          () => failLoad(`Unable to load ${sdkName} SDK.`, existingScript),
+          () => failLoad(`Impossibile caricare il servizio ${sdkName}.`, existingScript),
           { once: true }
         );
         return;
@@ -63,7 +63,7 @@ const loadExternalScript = (
     script.defer = true;
     script.setAttribute(SCRIPT_STATUS_ATTR, 'loading');
     script.onload = () => markResolved(script);
-    script.onerror = () => failLoad(`Unable to load ${sdkName} SDK.`, script);
+    script.onerror = () => failLoad(`Impossibile caricare il servizio ${sdkName}.`, script);
     document.head.appendChild(script);
   });
 
@@ -116,7 +116,7 @@ export const mountGoogleSignInButton = async ({
   onError: (message: string) => void;
 }) => {
   if (!clientId.trim()) {
-    throw new Error('Google client id is not configured.');
+    throw new Error('Il client ID Google non è configurato.');
   }
 
   await loadExternalScript(
@@ -127,7 +127,7 @@ export const mountGoogleSignInButton = async ({
 
   const googleId = window.google?.accounts?.id;
   if (!googleId) {
-    throw new Error('Google SDK is unavailable.');
+    throw new Error('Il servizio Google non è disponibile.');
   }
 
   ensureGoogleInitialized(googleId, clientId);

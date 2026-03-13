@@ -226,7 +226,7 @@ export const getManagedUserDetail = async (env: Env, auth: AuthSession, userId: 
   ]);
 
   if (!user) {
-    return fail(404, 'user_not_found', 'User not found.');
+    return fail(404, 'user_not_found', 'Utente non trovato.');
   }
 
   return {
@@ -263,7 +263,7 @@ export const assignCoachToClient = async (
     .first();
 
   if (!client) {
-    return fail(404, 'user_not_found', 'Client not found.');
+    return fail(404, 'user_not_found', 'Cliente non trovato.');
   }
 
   if (coachUserId) {
@@ -274,7 +274,7 @@ export const assignCoachToClient = async (
       .first();
 
     if (!coach) {
-      return fail(400, 'invalid_coach', 'Coach must be an existing coach user.');
+      return fail(400, 'invalid_coach', 'Il coach deve essere un utente coach esistente.');
     }
   }
 

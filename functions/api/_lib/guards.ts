@@ -4,7 +4,7 @@ import type { AuthSession, Env, UserRow } from './types';
 
 export const requireAuth = async (request: Request, env: Env) => {
   const session = await getAuthSession(request, env);
-  if (!session) return fail(401, 'unauthorized', 'Authentication required.');
+  if (!session) return fail(401, 'unauthorized', 'Autenticazione richiesta.');
   return session;
 };
 
@@ -13,7 +13,7 @@ export const requireManager = async (request: Request, env: Env) => {
   if (auth instanceof Response) return auth;
 
   if (!auth.user.canManageClients) {
-    return fail(403, 'forbidden', 'Manager access required.');
+    return fail(403, 'forbidden', 'Accesso riservato ai gestori.');
   }
 
   return auth;
@@ -24,7 +24,7 @@ export const requireAdmin = async (request: Request, env: Env) => {
   if (auth instanceof Response) return auth;
 
   if (!auth.user.isAdmin) {
-    return fail(403, 'forbidden', 'Admin access required.');
+    return fail(403, 'forbidden', 'Accesso riservato agli amministratori.');
   }
 
   return auth;
@@ -64,7 +64,7 @@ export const requireManagedUserAccess = async (
 ): Promise<UserRow | Response> => {
   const targetUser = await loadManagedUser(env, userId);
   if (!targetUser) {
-    return fail(404, 'user_not_found', 'User not found.');
+    return fail(404, 'user_not_found', 'Utente non trovato.');
   }
 
   if (auth.user.isAdmin) {
@@ -83,5 +83,5 @@ export const requireManagedUserAccess = async (
     return targetUser;
   }
 
-  return fail(403, 'forbidden', 'You cannot manage this user.');
+  return fail(403, 'forbidden', 'Non puoi gestire questo utente.');
 };

@@ -58,7 +58,7 @@ export const AdminInviteModal = ({
               Crea utente invitato
             </h2>
             <p className="text-zinc-500 mt-1">
-              Il record utente viene creato subito in stato <span className="font-semibold">invited</span>.
+              Il record utente viene creato subito con stato <span className="font-semibold">Invitato</span>.
             </p>
           </div>
           <button

@@ -25,7 +25,7 @@ export const AcceptInvitePage = () => {
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? '';
   const googleConfigError = !googleClientId
-    ? 'Google signup non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
+    ? "Registrazione con Google non configurata (manca VITE_GOOGLE_CLIENT_ID)."
     : null;
 
   const handleSuccess = async (user: AuthUser) => {
@@ -40,7 +40,7 @@ export const AcceptInvitePage = () => {
       void handleSuccess(data.user);
     },
     onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Signup email fallito.');
+      setError(isApiError(err) ? err.message : 'Registrazione con email non riuscita.');
     },
   });
 
@@ -50,7 +50,7 @@ export const AcceptInvitePage = () => {
       void handleSuccess(data.user);
     },
     onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Signup Google fallito.');
+      setError(isApiError(err) ? err.message : 'Registrazione con Google non riuscita.');
     },
   });
 
@@ -75,6 +75,7 @@ export const AcceptInvitePage = () => {
       clientId: googleClientId,
       buttonText: 'signup_with',
       flow: 'signup',
+      locale: 'it',
       onCredential: handleGoogleCredential,
       onError: handleGoogleSdkError,
     })
@@ -84,7 +85,7 @@ export const AcceptInvitePage = () => {
       })
       .catch((err: unknown) => {
         setGoogleSetupError(
-          err instanceof Error ? err.message : 'Impossibile inizializzare Google SDK.'
+          err instanceof Error ? err.message : 'Impossibile inizializzare il servizio Google.'
         );
       });
 
@@ -114,7 +115,7 @@ export const AcceptInvitePage = () => {
       <div className="max-w-xl mx-auto space-y-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-zinc-900">Completa registrazione</h1>
-          <p className="text-zinc-500 mt-2">Attiva il tuo account con il canale che preferisci</p>
+          <p className="text-zinc-500 mt-2">Attiva il tuo account con il metodo che preferisci.</p>
         </div>
 
         {error && (
@@ -124,7 +125,7 @@ export const AcceptInvitePage = () => {
         )}
 
         <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Signup con Email</h2>
+          <h2 className="font-semibold text-zinc-900">Registrazione con email</h2>
           <input
             className="w-full rounded-xl border border-zinc-200 px-3 py-2"
             placeholder="Email invitata"
@@ -147,12 +148,12 @@ export const AcceptInvitePage = () => {
             }}
             disabled={emailMutation.isPending}
           >
-            {emailMutation.isPending ? 'Registrazione...' : 'Registrati con Email'}
+            {emailMutation.isPending ? 'Registrazione...' : 'Registrati con email'}
           </button>
         </div>
 
         <div className={cardClass}>
-          <h2 className="font-semibold text-zinc-900">Signup con Google</h2>
+          <h2 className="font-semibold text-zinc-900">Registrazione con Google</h2>
           <p className="text-sm text-zinc-500">
             Registrazione con Google Identity Services. Supportata per account Gmail o Google Workspace gestiti.
           </p>
@@ -161,7 +162,7 @@ export const AcceptInvitePage = () => {
             <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
           )}
           {googleMutation.isPending && (
-            <p className="text-sm text-zinc-500">Registrazione Google in corso...</p>
+            <p className="text-sm text-zinc-500">Registrazione con Google in corso...</p>
           )}
         </div>
 

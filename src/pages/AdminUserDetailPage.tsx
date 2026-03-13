@@ -102,7 +102,7 @@ export const AdminUserDetailPage = () => {
       });
     },
     onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Creazione scheda fallita.');
+      setGeneralError(isApiError(error) ? error.message : 'Creazione della scheda non riuscita.');
     },
   });
 
@@ -117,7 +117,7 @@ export const AdminUserDetailPage = () => {
       ]);
     },
     onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Aggiornamento coach fallito.');
+      setGeneralError(isApiError(error) ? error.message : 'Aggiornamento del coach non riuscito.');
     },
   });
 
@@ -133,7 +133,7 @@ export const AdminUserDetailPage = () => {
       setFatValue('');
     },
     onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Salvataggio check-in fallito.');
+      setGeneralError(isApiError(error) ? error.message : 'Salvataggio del check-in non riuscito.');
     },
   });
 
@@ -144,12 +144,12 @@ export const AdminUserDetailPage = () => {
   const title = isPersonalView
     ? 'Le mie schede'
     : user?.userType === 'coach'
-      ? 'Workspace coach'
-      : 'Workspace cliente';
+      ? 'Profilo coach'
+      : 'Profilo cliente';
   const subtitle = user
     ? isPersonalView
-      ? 'Gestisci la tua scheda personale, lo storico check-in e le versioni workout.'
-      : `Profilo di ${user.fullName} con storico schede, check-in e assegnazione coach.`
+      ? 'Gestisci la tua scheda personale, lo storico check-in e le diverse versioni della scheda.'
+      : `Profilo di ${user.fullName} con storico schede, check-in e assegnazione del coach.`
     : 'Gestione completa del profilo selezionato.';
 
   return (
@@ -172,11 +172,11 @@ export const AdminUserDetailPage = () => {
       >
         {detailQuery.isLoading || (isAdmin && coachesQuery.isLoading) ? (
           <div className="bg-white border border-zinc-200 rounded-[2rem] p-10 text-center text-zinc-500">
-            Caricamento workspace...
+            Caricamento profilo...
           </div>
         ) : detailQuery.isError || (isAdmin && coachesQuery.isError) ? (
           <div className="bg-red-100 border border-red-200 rounded-[2rem] p-10 text-center text-red-700">
-            Errore nel caricamento del workspace utente.
+            Errore nel caricamento del profilo utente.
           </div>
         ) : !detailQuery.data ? (
           <div className="bg-red-100 border border-red-200 rounded-[2rem] p-10 text-center text-red-700">

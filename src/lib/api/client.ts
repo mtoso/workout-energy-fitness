@@ -46,7 +46,7 @@ export const apiFetch = async <T>(
     const message =
       isObject(payload) && typeof payload.message === 'string'
         ? payload.message
-        : response.statusText || 'Request failed';
+        : 'Richiesta non riuscita.';
     const details = isObject(payload) ? payload.details : undefined;
 
     throw new ApiError(response.status, errorCode, message, details);

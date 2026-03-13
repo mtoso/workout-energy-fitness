@@ -30,15 +30,15 @@ export interface WorkoutPlanInput {
 
 const validateExercise = (exercise: WorkoutExerciseInput, dayIndex: number, exerciseIndex: number) => {
   if (!exercise.name?.trim()) {
-    return `Day ${dayIndex + 1}, exercise ${exerciseIndex + 1}: missing name.`;
+    return `Giorno ${dayIndex + 1}, esercizio ${exerciseIndex + 1}: nome mancante.`;
   }
 
   if (!Number.isInteger(exercise.sets) || exercise.sets <= 0) {
-    return `Day ${dayIndex + 1}, exercise ${exerciseIndex + 1}: sets must be a positive integer.`;
+    return `Giorno ${dayIndex + 1}, esercizio ${exerciseIndex + 1}: le serie devono essere un intero positivo.`;
   }
 
   if (!exercise.reps?.trim() || !exercise.rest?.trim()) {
-    return `Day ${dayIndex + 1}, exercise ${exerciseIndex + 1}: reps/rest are required.`;
+    return `Giorno ${dayIndex + 1}, esercizio ${exerciseIndex + 1}: ripetizioni e recupero sono obbligatori.`;
   }
 
   return null;
@@ -48,28 +48,28 @@ export const validateWorkoutPlanInput = (
   payload: unknown
 ): WorkoutPlanInput | Response => {
   if (!payload || typeof payload !== 'object') {
-    return fail(400, 'invalid_payload', 'Workout plan payload must be an object.');
+    return fail(400, 'invalid_payload', 'Il payload della scheda deve essere un oggetto.');
   }
 
   const raw = payload as WorkoutPlanInput;
 
   if (!raw.title || typeof raw.title !== 'string' || !raw.title.trim()) {
-    return fail(400, 'invalid_payload', 'Workout plan title is required.');
+    return fail(400, 'invalid_payload', 'Il titolo della scheda è obbligatorio.');
   }
 
   if (!Array.isArray(raw.days) || raw.days.length === 0) {
-    return fail(400, 'invalid_payload', 'Workout plan must include at least one day.');
+    return fail(400, 'invalid_payload', 'La scheda deve includere almeno un giorno.');
   }
 
   for (let dayIndex = 0; dayIndex < raw.days.length; dayIndex += 1) {
     const day = raw.days[dayIndex];
 
     if (!day.name?.trim() || !day.focus?.trim()) {
-      return fail(400, 'invalid_payload', `Day ${dayIndex + 1}: name and focus are required.`);
+      return fail(400, 'invalid_payload', `Giorno ${dayIndex + 1}: nome e focus sono obbligatori.`);
     }
 
     if (!Array.isArray(day.exercises) || day.exercises.length === 0) {
-      return fail(400, 'invalid_payload', `Day ${dayIndex + 1}: exercises are required.`);
+      return fail(400, 'invalid_payload', `Giorno ${dayIndex + 1}: gli esercizi sono obbligatori.`);
     }
 
     for (let exerciseIndex = 0; exerciseIndex < day.exercises.length; exerciseIndex += 1) {

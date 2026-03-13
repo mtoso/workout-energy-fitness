@@ -25,12 +25,12 @@ export const verifyGoogleToken = async (
   env: Env
 ): Promise<VerifiedGoogleIdentity | Response> => {
   if (!idToken || typeof idToken !== 'string') {
-    return fail(400, 'invalid_token', 'Missing identity token.');
+    return fail(400, 'invalid_token', "Token d'identità mancante.");
   }
 
   try {
     if (!env.GOOGLE_CLIENT_ID) {
-      return fail(500, 'auth_misconfigured', 'GOOGLE_CLIENT_ID is not configured.');
+      return fail(500, 'auth_misconfigured', 'GOOGLE_CLIENT_ID non configurato.');
     }
 
     const { payload } = await jwtVerify(idToken, googleJwks, {
@@ -44,7 +44,7 @@ export const verifyGoogleToken = async (
     const hostedDomain = ensureString(payload.hd);
 
     if (!googleSubject || !email || !emailVerified) {
-      return fail(401, 'invalid_token', 'Google token is missing verified identity data.');
+      return fail(401, 'invalid_token', 'Il token Google non contiene dati verificati sufficienti.');
     }
 
     return {
@@ -55,6 +55,6 @@ export const verifyGoogleToken = async (
       isAuthoritativeEmail: isAuthoritativeGoogleEmail(email.toLowerCase(), hostedDomain),
     };
   } catch {
-    return fail(401, 'invalid_token', 'Identity token validation failed.');
+    return fail(401, 'invalid_token', 'Validazione del token d’identità non riuscita.');
   }
 };

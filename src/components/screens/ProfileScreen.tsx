@@ -31,7 +31,7 @@ export const ProfileScreen = ({
             onClick={onLogout}
             className="shrink-0 text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 active:scale-[0.98] transition"
           >
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Esci
           </button>
         </div>
 

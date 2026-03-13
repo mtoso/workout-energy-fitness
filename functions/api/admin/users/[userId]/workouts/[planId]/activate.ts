@@ -7,7 +7,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
 
   const userId = params.userId;
   const planId = params.planId;
-  if (!userId || !planId) return fail(400, 'invalid_payload', 'User id and plan id are required.');
+  if (!userId || !planId) return fail(400, 'invalid_payload', 'Utente e scheda sono obbligatori.');
 
   const access = await requireManagedUserAccess(auth, env, userId);
   if (access instanceof Response) return access;

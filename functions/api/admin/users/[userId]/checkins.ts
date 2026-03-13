@@ -13,7 +13,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
 
   const userId = params.userId;
   if (!userId) {
-    return fail(400, 'invalid_user', 'User id is required.');
+    return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
   }
 
   const bodyOrResponse = await readJson<CreateCheckinPayload>(request);
@@ -23,11 +23,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
   const fat = bodyOrResponse.fat === undefined || bodyOrResponse.fat === null ? null : Number(bodyOrResponse.fat);
 
   if (!bodyOrResponse.recordedAt?.trim() || !Number.isFinite(weight) || weight <= 0) {
-    return fail(400, 'invalid_payload', 'Recorded date and positive weight are required.');
+    return fail(400, 'invalid_payload', 'La data della rilevazione e un peso positivo sono obbligatori.');
   }
 
   if (fat !== null && (!Number.isFinite(fat) || fat < 0 || fat > 100)) {
-    return fail(400, 'invalid_payload', 'Body fat must be between 0 and 100.');
+    return fail(400, 'invalid_payload', 'La massa grassa deve essere compresa tra 0 e 100.');
   }
 
   return createBodyCheckin(env, auth, userId, {

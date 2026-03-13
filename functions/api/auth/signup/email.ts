@@ -19,12 +19,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const password = bodyOrResponse.password || '';
 
   if (!inviteToken || !email || !password) {
-    return fail(400, 'invalid_payload', 'Invite token, email and password are required.');
+    return fail(400, 'invalid_payload', "Token d'invito, email e password sono obbligatori.");
   }
 
   const invitedUser = await findInvitedUserByToken(env, inviteToken);
   if (!invitedUser) {
-    return fail(400, 'invalid_invite', 'Invite is invalid, expired, or already used.');
+    return fail(400, 'invalid_invite', "L'invito non è valido, è scaduto oppure è già stato utilizzato.");
   }
 
   const activated = await activateInvitedUser(
@@ -43,7 +43,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const user = await getAuthUserById(env, activated.userId);
   if (!user) {
-    return fail(500, 'user_not_found', 'Unable to load account.');
+    return fail(500, 'user_not_found', "Impossibile caricare l'account.");
   }
 
   const { cookieHeader } = await issueSession(request, env, activated.userId);

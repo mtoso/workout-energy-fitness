@@ -81,26 +81,26 @@ export const validateAdminWorkoutPlanInput = (
   payload: unknown
 ): AdminWorkoutPlanInput | Response => {
   if (!payload || typeof payload !== 'object') {
-    return fail(400, 'invalid_payload', 'Workout payload must be an object.');
+    return fail(400, 'invalid_payload', 'Il payload della scheda deve essere un oggetto.');
   }
 
   const input = payload as AdminWorkoutPlanInput;
   if (!input.title?.trim()) {
-    return fail(400, 'invalid_payload', 'Workout title is required.');
+    return fail(400, 'invalid_payload', 'Il titolo della scheda è obbligatorio.');
   }
 
   if (!Array.isArray(input.weeks) || input.weeks.length === 0) {
-    return fail(400, 'invalid_payload', 'Workout must include at least one week.');
+    return fail(400, 'invalid_payload', 'La scheda deve includere almeno una settimana.');
   }
 
   for (let weekIndex = 0; weekIndex < input.weeks.length; weekIndex += 1) {
     const week = input.weeks[weekIndex];
     if (!week.name?.trim()) {
-      return fail(400, 'invalid_payload', `Week ${weekIndex + 1}: name is required.`);
+      return fail(400, 'invalid_payload', `Settimana ${weekIndex + 1}: il nome è obbligatorio.`);
     }
 
     if (!Array.isArray(week.days) || week.days.length === 0) {
-      return fail(400, 'invalid_payload', `Week ${weekIndex + 1}: at least one day is required.`);
+      return fail(400, 'invalid_payload', `Settimana ${weekIndex + 1}: è obbligatorio almeno un giorno.`);
     }
 
     for (let dayIndex = 0; dayIndex < week.days.length; dayIndex += 1) {
@@ -109,7 +109,7 @@ export const validateAdminWorkoutPlanInput = (
         return fail(
           400,
           'invalid_payload',
-          `Week ${weekIndex + 1}, day ${dayIndex + 1}: name and focus are required.`
+          `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}: nome e focus sono obbligatori.`
         );
       }
 
@@ -117,7 +117,7 @@ export const validateAdminWorkoutPlanInput = (
         return fail(
           400,
           'invalid_payload',
-          `Week ${weekIndex + 1}, day ${dayIndex + 1}: at least one exercise group is required.`
+          `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}: è obbligatorio almeno un gruppo di esercizi.`
         );
       }
 
@@ -127,7 +127,7 @@ export const validateAdminWorkoutPlanInput = (
           return fail(
             400,
             'invalid_payload',
-            `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}: invalid type.`
+            `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}: tipo non valido.`
           );
         }
 
@@ -135,7 +135,7 @@ export const validateAdminWorkoutPlanInput = (
           return fail(
             400,
             'invalid_payload',
-            `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}: sets and rest are required.`
+            `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}: serie e recupero sono obbligatori.`
           );
         }
 
@@ -143,7 +143,7 @@ export const validateAdminWorkoutPlanInput = (
           return fail(
             400,
             'invalid_payload',
-            `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}: items are required.`
+            `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}: gli esercizi sono obbligatori.`
           );
         }
 
@@ -151,7 +151,7 @@ export const validateAdminWorkoutPlanInput = (
           return fail(
             400,
             'invalid_payload',
-            `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}: single groups require exactly one item.`
+            `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}: i gruppi singoli devono avere esattamente un esercizio.`
           );
         }
 
@@ -159,7 +159,7 @@ export const validateAdminWorkoutPlanInput = (
           return fail(
             400,
             'invalid_payload',
-            `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}: supersets require at least two items.`
+            `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}: le superserie devono avere almeno due esercizi.`
           );
         }
 
@@ -169,7 +169,7 @@ export const validateAdminWorkoutPlanInput = (
             return fail(
               400,
               'invalid_payload',
-              `Week ${weekIndex + 1}, day ${dayIndex + 1}, group ${groupIndex + 1}, item ${itemIndex + 1}: name and reps are required.`
+              `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}, esercizio ${itemIndex + 1}: nome e ripetizioni sono obbligatori.`
             );
           }
         }
@@ -363,7 +363,7 @@ export const saveWorkoutPlanById = async (
 ) => {
   const existingPlan = await loadPlanRow(env, planId, userId);
   if (!existingPlan) {
-    return fail(404, 'plan_not_found', 'Workout plan not found.');
+    return fail(404, 'plan_not_found', 'Scheda non trovata.');
   }
 
   await env.DB.prepare(
@@ -537,7 +537,7 @@ export const createWorkoutPlanForUser = async (
 export const activateWorkoutPlanForUser = async (env: Env, userId: string, planId: string) => {
   const existingPlan = await loadPlanRow(env, planId, userId);
   if (!existingPlan) {
-    return fail(404, 'plan_not_found', 'Workout plan not found.');
+    return fail(404, 'plan_not_found', 'Scheda non trovata.');
   }
 
   await env.DB.batch([

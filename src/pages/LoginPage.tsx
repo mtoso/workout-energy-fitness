@@ -21,7 +21,7 @@ export const LoginPage = () => {
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? '';
   const googleConfigError = !googleClientId
-    ? 'Google login non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
+    ? "Accesso con Google non configurato (manca VITE_GOOGLE_CLIENT_ID)."
     : null;
 
   const handleSuccess = async (user: AuthUser) => {
@@ -36,7 +36,7 @@ export const LoginPage = () => {
       void handleSuccess(data.user);
     },
     onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Login email fallito.');
+      setError(isApiError(err) ? err.message : "Accesso con email non riuscito.");
     },
   });
 
@@ -46,7 +46,7 @@ export const LoginPage = () => {
       void handleSuccess(data.user);
     },
     onError: (err) => {
-      setError(isApiError(err) ? err.message : 'Login Google fallito.');
+      setError(isApiError(err) ? err.message : "Accesso con Google non riuscito.");
     },
   });
 
@@ -83,7 +83,7 @@ export const LoginPage = () => {
       })
       .catch((err: unknown) => {
         setGoogleSetupError(
-          err instanceof Error ? err.message : 'Impossibile inizializzare Google SDK.'
+          err instanceof Error ? err.message : 'Impossibile inizializzare il servizio Google.'
         );
       });
 
@@ -140,7 +140,7 @@ export const LoginPage = () => {
             <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
           )}
           {googleMutation.isPending && (
-            <p className="text-sm text-zinc-500">Accesso Google in corso...</p>
+            <p className="text-sm text-zinc-500">Accesso con Google in corso...</p>
           )}
         </div>
       </div>

@@ -18,7 +18,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, params })
   if (auth instanceof Response) return auth;
 
   const userId = params.userId;
-  if (!userId) return fail(400, 'invalid_user', 'User id is required.');
+  if (!userId) return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
 
   const access = await requireManagedUserAccess(auth, env, userId);
   if (access instanceof Response) return access;
@@ -32,7 +32,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
   if (auth instanceof Response) return auth;
 
   const userId = params.userId;
-  if (!userId) return fail(400, 'invalid_user', 'User id is required.');
+  if (!userId) return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
 
   const access = await requireManagedUserAccess(auth, env, userId);
   if (access instanceof Response) return access;

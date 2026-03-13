@@ -17,11 +17,11 @@ interface GoogleLoginPayload {
 
 const accountStatusError = (status: 'invited' | 'active' | 'disabled') => {
   if (status === 'invited') {
-    return fail(403, 'account_not_activated', 'Complete invite activation before logging in.');
+    return fail(403, 'account_not_activated', "Completa l'attivazione dell'invito prima di accedere.");
   }
 
   if (status === 'disabled') {
-    return fail(403, 'account_disabled', 'Account is disabled.');
+    return fail(403, 'account_disabled', "L'account è disabilitato.");
   }
 
   return null;
@@ -44,7 +44,7 @@ export const loginWithGoogle = async (request: Request, env: Env) => {
     await touchIdentityLogin(env, 'google', googleIdentity.googleSubject, existingIdentityUser.id);
     const user = await getAuthUserById(env, existingIdentityUser.id);
     if (!user) {
-      return fail(500, 'user_not_found', 'Unable to load account.');
+      return fail(500, 'user_not_found', "Impossibile caricare l'account.");
     }
 
     const { cookieHeader } = await issueSession(request, env, existingIdentityUser.id);
@@ -52,20 +52,20 @@ export const loginWithGoogle = async (request: Request, env: Env) => {
   }
 
   if (!googleIdentity.email || !googleIdentity.emailVerified) {
-    return fail(403, 'account_not_provisioned', 'Account is not provisioned. Ask an admin for an invite.');
+    return fail(403, 'account_not_provisioned', 'Account non abilitato. Chiedi a un amministratore di inviarti un invito.');
   }
 
   if (!googleIdentity.isAuthoritativeEmail) {
     return fail(
       403,
       'google_email_not_authoritative',
-      'Google can only auto-link Gmail or managed Google Workspace addresses. Use email login for this address.'
+      'Google può collegare automaticamente solo indirizzi Gmail o Google Workspace gestiti. Per questo indirizzo usa l’accesso con email.'
     );
   }
 
   const user = await findUserByEmail(env, googleIdentity.email);
   if (!user) {
-    return fail(403, 'account_not_provisioned', 'Account is not provisioned. Ask an admin for an invite.');
+    return fail(403, 'account_not_provisioned', 'Account non abilitato. Chiedi a un amministratore di inviarti un invito.');
   }
 
   const statusError = accountStatusError(user.status);
@@ -82,14 +82,14 @@ export const loginWithGoogle = async (request: Request, env: Env) => {
   if (!linked) {
     const reloadedIdentityUser = await getUserByIdentity(env, 'google', googleIdentity.googleSubject);
     if (!reloadedIdentityUser || reloadedIdentityUser.id !== user.id) {
-      return fail(409, 'identity_conflict', 'Identity is already linked to another account.');
+      return fail(409, 'identity_conflict', 'Questa identità è già collegata a un altro account.');
     }
   }
 
   await touchIdentityLogin(env, 'google', googleIdentity.googleSubject, user.id);
   const authUser = await getAuthUserById(env, user.id);
   if (!authUser) {
-    return fail(500, 'user_not_found', 'Unable to load account.');
+    return fail(500, 'user_not_found', "Impossibile caricare l'account.");
   }
 
   const { cookieHeader } = await issueSession(request, env, user.id);

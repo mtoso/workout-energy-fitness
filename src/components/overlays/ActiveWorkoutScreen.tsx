@@ -222,7 +222,7 @@ export const ActiveWorkoutScreen = ({
           <Check size={48} className="text-emerald-500" strokeWidth={3} />
         </div>
         <h2 className="text-4xl font-bold tracking-tight mb-2 text-center">
-          Workout
+          Allenamento
           <br />
           Completato!
         </h2>
@@ -233,7 +233,7 @@ export const ActiveWorkoutScreen = ({
           onClick={onClose}
           className="w-full bg-zinc-950 text-white font-bold py-4 rounded-2xl hover:bg-zinc-800 transition active:scale-[0.98]"
         >
-          Torna alla Dashboard
+          Torna alla scheda
         </button>
       </div>
     );

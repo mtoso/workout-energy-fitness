@@ -16,13 +16,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, params })
 
   const userId = params.userId;
   const planId = params.planId;
-  if (!userId || !planId) return fail(400, 'invalid_payload', 'User id and plan id are required.');
+  if (!userId || !planId) return fail(400, 'invalid_payload', 'Utente e scheda sono obbligatori.');
 
   const access = await requireManagedUserAccess(auth, env, userId);
   if (access instanceof Response) return access;
 
   const plan = await getWorkoutPlanById(env, userId, planId);
-  if (!plan) return fail(404, 'plan_not_found', 'Workout plan not found.');
+  if (!plan) return fail(404, 'plan_not_found', 'Scheda non trovata.');
 
   return json({ plan });
 };
@@ -33,7 +33,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
 
   const userId = params.userId;
   const planId = params.planId;
-  if (!userId || !planId) return fail(400, 'invalid_payload', 'User id and plan id are required.');
+  if (!userId || !planId) return fail(400, 'invalid_payload', 'Utente e scheda sono obbligatori.');
 
   const access = await requireManagedUserAccess(auth, env, userId);
   if (access instanceof Response) return access;

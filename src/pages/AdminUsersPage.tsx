@@ -60,7 +60,7 @@ export const AdminUsersPage = () => {
       ]);
     },
     onError: (error) => {
-      setInviteError(isApiError(error) ? error.message : 'Creazione utente fallita.');
+      setInviteError(isApiError(error) ? error.message : 'Creazione utente non riuscita.');
     },
   });
 
@@ -103,7 +103,7 @@ export const AdminUsersPage = () => {
   const pageTitle = isAdmin ? 'Utenti' : 'I tuoi clienti';
   const pageSubtitle = isAdmin
     ? 'Lista unificata di coach e clienti. Crea utenti invitati e filtra per coach, tipo o stato.'
-    : 'Clienti assegnati al tuo profilo coach. Apri il loro workspace e gestisci schede e check-in.';
+    : 'Clienti assegnati al tuo profilo coach. Apri il loro profilo e gestisci schede e check-in.';
 
   return (
     <>

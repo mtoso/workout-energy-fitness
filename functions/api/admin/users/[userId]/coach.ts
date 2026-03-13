@@ -11,7 +11,7 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
 
   const userId = params.userId;
   if (!userId) {
-    return fail(400, 'invalid_user', 'User id is required.');
+    return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
   }
 
   const bodyOrResponse = await readJson<AssignCoachPayload>(request);

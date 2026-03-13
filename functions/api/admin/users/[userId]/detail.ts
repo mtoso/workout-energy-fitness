@@ -7,7 +7,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, params })
 
   const userId = params.userId;
   if (!userId) {
-    return fail(400, 'invalid_user', 'User id is required.');
+    return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
   }
 
   return getManagedUserDetail(env, auth, userId);

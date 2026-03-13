@@ -18,7 +18,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const password = bodyOrResponse.password || '';
 
   if (!email || !password) {
-    return fail(400, 'invalid_credentials', 'Email and password are required.');
+    return fail(400, 'invalid_credentials', 'Email e password sono obbligatorie.');
   }
 
   const account = await env.DB.prepare(
@@ -43,22 +43,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }>();
 
   if (!account || !verifyPassword(password, account.password_hash)) {
-    return fail(401, 'invalid_credentials', 'Invalid email or password.');
+    return fail(401, 'invalid_credentials', 'Email o password non valide.');
   }
 
   if (account.status === 'invited') {
-    return fail(403, 'account_not_activated', 'Complete invite activation before logging in.');
+    return fail(403, 'account_not_activated', "Completa l'attivazione dell'invito prima di accedere.");
   }
 
   if (account.status === 'disabled') {
-    return fail(403, 'account_disabled', 'Account is disabled.');
+    return fail(403, 'account_disabled', "L'account è disabilitato.");
   }
 
   await touchIdentityLogin(env, 'email', account.email, account.id);
 
   const user = await getAuthUserById(env, account.id);
   if (!user) {
-    return fail(500, 'user_not_found', 'Unable to load account.');
+    return fail(500, 'user_not_found', "Impossibile caricare l'account.");
   }
 
   const { cookieHeader } = await issueSession(request, env, account.id);

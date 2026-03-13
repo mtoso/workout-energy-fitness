@@ -38,6 +38,12 @@ const getUserLabel = (isAdmin: boolean, userType: 'client' | 'coach') => {
   return userType === 'coach' ? 'Coach' : 'Cliente';
 };
 
+const getStatusLabel = (status: 'invited' | 'active' | 'disabled') => {
+  if (status === 'invited') return 'Invitato';
+  if (status === 'disabled') return 'Disabilitato';
+  return 'Attivo';
+};
+
 export const AdminShell = ({
   section,
   title,
@@ -120,7 +126,7 @@ export const AdminShell = ({
             onClick={onLogout}
             className="w-full mb-4 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-2xl font-semibold transition"
           >
-            <LogOut size={16} /> Logout
+            <LogOut size={16} /> Esci
           </button>
           <div className="flex items-center gap-3 px-2">
             <div className="w-11 h-11 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold">
@@ -128,10 +134,12 @@ export const AdminShell = ({
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-white truncate">
-                {currentUser?.fullName ?? currentUser?.email ?? 'Manager'}
+                {currentUser?.fullName ?? currentUser?.email ?? 'Gestore'}
               </p>
               <p className="text-xs text-zinc-500">
-                {currentUser ? `${getUserLabel(currentUser.isAdmin, currentUser.userType)} • ${currentUser.status}` : 'Sessione'}
+                {currentUser
+                  ? `${getUserLabel(currentUser.isAdmin, currentUser.userType)} • ${getStatusLabel(currentUser.status)}`
+                  : 'Sessione'}
               </p>
             </div>
           </div>
@@ -151,7 +159,7 @@ export const AdminShell = ({
               onClick={onLogout}
               className="bg-white/10 px-3 py-2 rounded-xl text-sm font-semibold shrink-0"
             >
-              Logout
+              Esci
             </button>
           </div>
         </div>

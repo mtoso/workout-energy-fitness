@@ -16,12 +16,12 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
 
   const inviteToken = (bodyOrResponse.inviteToken || '').trim();
   if (!inviteToken) {
-    return fail(400, 'invalid_invite', 'Invite token is required.');
+    return fail(400, 'invalid_invite', "Il token d'invito è obbligatorio.");
   }
 
   const invitedUser = await findInvitedUserByToken(env, inviteToken);
   if (!invitedUser) {
-    return fail(400, 'invalid_invite', 'Invite is invalid, expired, or already used.');
+    return fail(400, 'invalid_invite', "L'invito non è valido, è scaduto oppure è già stato utilizzato.");
   }
 
   const identityOrResponse = await verifyGoogleToken(bodyOrResponse.idToken, env);
@@ -29,14 +29,14 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
 
   const googleIdentity = identityOrResponse;
   if (!googleIdentity.email || !googleIdentity.emailVerified) {
-    return fail(400, 'invalid_token', 'Google token must include a verified email for invite signup.');
+    return fail(400, 'invalid_token', "Il token Google deve includere un'email verificata per completare l'invito.");
   }
 
   if (!googleIdentity.isAuthoritativeEmail) {
     return fail(
       400,
       'google_email_not_authoritative',
-      'Google signup is only supported for Gmail or managed Google Workspace addresses. Use email signup for this address.'
+      'La registrazione con Google è supportata solo per indirizzi Gmail o Google Workspace gestiti. Per questo indirizzo usa la registrazione con email.'
     );
   }
 
@@ -50,7 +50,7 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
 
   const user = await getAuthUserById(env, activated.userId);
   if (!user) {
-    return fail(500, 'user_not_found', 'Unable to load account.');
+    return fail(500, 'user_not_found', "Impossibile caricare l'account.");
   }
 
   const { cookieHeader } = await issueSession(request, env, activated.userId);
