@@ -1,7 +1,5 @@
-import { requireAdmin } from '../../../../../../_lib/guards';
-import { activateWorkoutPlanForUser } from '../../../../../../_lib/admin-workouts';
-import { fail, json } from '../../../../../../_lib/response';
-import type { Env } from '../../../../../../_lib/types';
+import { activateWorkoutPlanForUser, fail, json, requireAdmin } from '../_lib';
+import type { Env } from '../_lib';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }) => {
   const auth = await requireAdmin(request, env);

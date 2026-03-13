@@ -1,8 +1,5 @@
-import { requireAdmin } from '../../../_lib/guards';
-import { readJson } from '../../../_lib/http';
-import { createBodyCheckin } from '../../../_lib/admin-users';
-import { fail, json } from '../../../_lib/response';
-import type { Env } from '../../../_lib/types';
+import { createBodyCheckin, fail, json, readJson, requireAdmin } from './_lib';
+import type { Env } from './_lib';
 
 interface CreateCheckinPayload {
   recordedAt: string;

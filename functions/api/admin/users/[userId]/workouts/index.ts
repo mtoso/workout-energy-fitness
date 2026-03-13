@@ -1,11 +1,12 @@
-import { requireAdmin } from '../../../../_lib/guards';
-import { readJson } from '../../../../_lib/http';
 import {
   createWorkoutPlanForUser,
+  fail,
+  json,
   listWorkoutPlansForUser,
-} from '../../../../_lib/admin-workouts';
-import { fail, json } from '../../../../_lib/response';
-import type { Env } from '../../../../_lib/types';
+  readJson,
+  requireAdmin,
+} from './_lib';
+import type { Env } from './_lib';
 
 interface CreateWorkoutPayload {
   copyFromPlanId?: string | null;

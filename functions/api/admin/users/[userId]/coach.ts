@@ -1,8 +1,12 @@
-import { requireAdmin } from '../../../_lib/guards';
-import { readJson } from '../../../_lib/http';
-import { assignCoachToCustomer, getAdminUserDetail } from '../../../_lib/admin-users';
-import { fail, json } from '../../../_lib/response';
-import type { Env } from '../../../_lib/types';
+import {
+  assignCoachToCustomer,
+  fail,
+  getAdminUserDetail,
+  json,
+  readJson,
+  requireAdmin,
+} from './_lib';
+import type { Env } from './_lib';
 
 interface AssignCoachPayload {
   coachUserId?: string | null;

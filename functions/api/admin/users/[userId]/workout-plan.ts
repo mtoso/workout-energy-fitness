@@ -1,12 +1,13 @@
-import { requireAdmin } from '../../../_lib/guards';
-import { readJson } from '../../../_lib/http';
-import { fail, json } from '../../../_lib/response';
 import {
+  fail,
   getWorkoutPlanForUser,
+  json,
+  readJson,
+  requireAdmin,
   upsertWorkoutPlanForUser,
   validateWorkoutPlanInput,
-} from '../../../_lib/workout-plan';
-import type { Env } from '../../../_lib/types';
+} from './_lib';
+import type { Env } from './_lib';
 
 const getTargetUser = async (env: Env, userId: string) =>
   env.DB.prepare(

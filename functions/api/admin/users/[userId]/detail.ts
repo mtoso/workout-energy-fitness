@@ -1,7 +1,5 @@
-import { requireAdmin } from '../../../_lib/guards';
-import { getAdminUserDetail } from '../../../_lib/admin-users';
-import { fail, json } from '../../../_lib/response';
-import type { Env } from '../../../_lib/types';
+import { fail, getAdminUserDetail, json, requireAdmin } from './_lib';
+import type { Env } from './_lib';
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env, params }) => {
   const auth = await requireAdmin(request, env);

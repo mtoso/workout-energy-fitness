@@ -1,12 +1,13 @@
-import { requireAdmin } from '../../../../../_lib/guards';
-import { readJson } from '../../../../../_lib/http';
 import {
+  fail,
   getWorkoutPlanById,
+  json,
+  readJson,
+  requireAdmin,
   saveWorkoutPlanById,
   validateAdminWorkoutPlanInput,
-} from '../../../../../_lib/admin-workouts';
-import { fail, json } from '../../../../../_lib/response';
-import type { Env } from '../../../../../_lib/types';
+} from './_lib';
+import type { Env } from './_lib';
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env, params }) => {
   const auth = await requireAdmin(request, env);

@@ -1,8 +1,5 @@
-import { randomToken, sha256Hex } from '../_lib/crypto';
-import { normalizeEmail, readJson } from '../_lib/http';
-import { requireAdmin } from '../_lib/guards';
-import { fail, json } from '../_lib/response';
-import type { Env, UserRole } from '../_lib/types';
+import { fail, json, normalizeEmail, randomToken, readJson, requireAdmin, sha256Hex } from './_lib';
+import type { Env, UserRole } from './_lib';
 
 interface CreateInvitePayload {
   email: string;
