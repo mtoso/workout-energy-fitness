@@ -123,17 +123,17 @@ export const LoginPage = () => {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          <button
-            className="w-full bg-zinc-900 text-white rounded-full h-[44px] font-semibold text-base disabled:opacity-50"
-            onClick={() => {
-              setError(null);
-              emailMutation.mutate({ email, password });
-            }}
-            disabled={emailMutation.isPending}
-          >
-            {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
-          </button>
-          <div className="pt-1">
+          <div className="max-w-[400px] mx-auto w-full space-y-4 pt-1">
+            <button
+              className="w-full bg-zinc-900 text-white rounded-full h-[44px] font-semibold text-base disabled:opacity-50"
+              onClick={() => {
+                setError(null);
+                emailMutation.mutate({ email, password });
+              }}
+              disabled={emailMutation.isPending}
+            >
+              {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
+            </button>
             <div ref={googleButtonRef} className="min-h-[44px] w-full" />
           </div>
           {(googleConfigError || googleSetupError) && (
