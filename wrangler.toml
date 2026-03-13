@@ -4,8 +4,8 @@ pages_build_output_dir = "dist"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "workout_energy_fitness_clean"
-database_id = "fe30465f-1342-4145-9ad6-bfe90ce37358"
+database_name = "workout_energy_fitness"
+database_id = "04b817e1-6bb2-42ef-8f2e-f9a603c55e29"
 migrations_dir = "migrations"
 
 [vars]
