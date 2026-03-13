@@ -208,7 +208,7 @@ export const AdminUsersPage = () => {
             users={filteredUsers}
             onOpenUser={(userId) => {
               void navigate({
-                to: '/admin/users/$userId/workout',
+                to: '/admin/users/$userId',
                 params: { userId },
               });
             }}

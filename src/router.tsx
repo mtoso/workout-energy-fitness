@@ -12,8 +12,8 @@ import { LoginPage } from './pages/LoginPage';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { UserAppPage } from './pages/UserAppPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
-import { AdminUserWorkoutPage } from './pages/AdminUserWorkoutPage';
-import { AdminHomePage } from './pages/AdminHomePage';
+import { AdminUserDetailPage } from './pages/AdminUserDetailPage';
+import { AdminWorkoutEditorPage } from './pages/AdminWorkoutEditorPage';
 
 const requireAuthenticated = async () => {
   try {
@@ -78,8 +78,11 @@ const profileRoute = createRoute({
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin',
-  beforeLoad: requireManager,
-  component: AdminHomePage,
+  beforeLoad: async () => {
+    await requireManager();
+    throw redirect({ to: '/admin/users' });
+  },
+  component: () => null,
 });
 
 const adminUsersRoute = createRoute({
@@ -91,9 +94,16 @@ const adminUsersRoute = createRoute({
 
 const adminUserWorkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/admin/users/$userId/workout',
+  path: '/admin/users/$userId',
   beforeLoad: requireManager,
-  component: AdminUserWorkoutPage,
+  component: AdminUserDetailPage,
+});
+
+const adminWorkoutEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/users/$userId/workouts/$planId',
+  beforeLoad: requireManager,
+  component: AdminWorkoutEditorPage,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -105,6 +115,7 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
   adminUsersRoute,
   adminUserWorkoutRoute,
+  adminWorkoutEditorRoute,
 ]);
 
 export const router = createRouter({

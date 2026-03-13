@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { FileText, Plus, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
 import { AdminShell } from '../components/admin/AdminShell';
-import { AdminWorkoutPlanBuilder } from '../components/admin/AdminWorkoutPlanBuilder';
 import { isApiError } from '../lib/api/client';
 import {
   adminCoachesQueryOptions,
@@ -11,16 +10,12 @@ import {
   meQueryOptions,
 } from '../lib/api/query-options';
 import {
-  activateAdminWorkoutPlan,
   assignAdminUserCoach,
   createAdminCheckin,
   createAdminUserWorkout,
-  getAdminWorkoutPlan,
-  saveAdminWorkoutPlan,
 } from '../lib/api/workout';
 import { queryClient } from '../lib/query-client';
 import { useAdminLogout } from '../hooks/useAdminLogout';
-import type { AdminWorkoutPlanInput } from '../types/admin-workout';
 
 const summaryCardClass = 'bg-white border border-zinc-200 rounded-[2rem] p-5 shadow-sm';
 
@@ -69,9 +64,10 @@ const userTypeLabel = (userType: 'client' | 'coach') => (userType === 'coach' ? 
 const statusLabel = (status: 'invited' | 'active' | 'disabled') =>
   status === 'invited' ? 'Invitato' : status === 'disabled' ? 'Disabilitato' : 'Attivo';
 
-export const AdminUserWorkoutPage = () => {
-  const params = useParams({ from: '/admin/users/$userId/workout' });
+export const AdminUserDetailPage = () => {
+  const params = useParams({ from: '/admin/users/$userId' });
   const userId = params.userId;
+  const navigate = useNavigate();
   const { handleLogout } = useAdminLogout();
 
   const meQuery = useQuery(meQueryOptions());
@@ -84,79 +80,29 @@ export const AdminUserWorkoutPage = () => {
 
   const isPersonalView = meQuery.data?.user.id === userId;
 
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveOk, setSaveOk] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isAddWeightModalOpen, setIsAddWeightModalOpen] = useState(false);
   const [weightDate, setWeightDate] = useState(toDateInputValue(new Date()));
   const [weightValue, setWeightValue] = useState('');
   const [fatValue, setFatValue] = useState('');
 
-  const effectiveSelectedPlanId =
-    selectedPlanId ??
-    detailQuery.data?.workouts.find((workout) => workout.isCurrent)?.id ??
-    detailQuery.data?.workouts[0]?.id ??
-    null;
-
-  const selectedPlanSummary = useMemo(
-    () => detailQuery.data?.workouts.find((workout) => workout.id === effectiveSelectedPlanId) ?? null,
-    [detailQuery.data?.workouts, effectiveSelectedPlanId]
-  );
-
-  const workoutPlanQuery = useQuery({
-    queryKey: ['admin', 'workout-plan', userId, effectiveSelectedPlanId],
-    queryFn: () => getAdminWorkoutPlan(userId, effectiveSelectedPlanId as string),
-    enabled: Boolean(effectiveSelectedPlanId),
-  });
-
   const upsertDetailCache = (detail: NonNullable<typeof detailQuery.data>) => {
     queryClient.setQueryData(['admin', 'user-detail', userId], detail);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: ({ planId, payload }: { planId: string; payload: AdminWorkoutPlanInput }) =>
-      saveAdminWorkoutPlan(userId, planId, payload),
-    onSuccess: async (data) => {
-      setSaveError(null);
-      setSaveOk('Scheda salvata con successo.');
-      queryClient.setQueryData(['admin', 'workout-plan', userId, data.plan.id], data);
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
-      if (isPersonalView) {
-        await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-      }
-    },
-    onError: (error) => {
-      setSaveOk(null);
-      setSaveError(isApiError(error) ? error.message : 'Salvataggio fallito.');
-    },
-  });
-
   const createWorkoutMutation = useMutation({
-    mutationFn: () => createAdminUserWorkout(userId, effectiveSelectedPlanId),
+    mutationFn: () => createAdminUserWorkout(userId, detailQuery.data?.workouts[0]?.id ?? null),
     onSuccess: async (data) => {
       setGeneralError(null);
-      setSelectedPlanId(data.plan.id);
       queryClient.setQueryData(['admin', 'workout-plan', userId, data.plan.id], data);
       await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
+      void navigate({
+        to: '/admin/users/$userId/workouts/$planId',
+        params: { userId, planId: data.plan.id },
+      });
     },
     onError: (error) => {
       setGeneralError(isApiError(error) ? error.message : 'Creazione scheda fallita.');
-    },
-  });
-
-  const activateWorkoutMutation = useMutation({
-    mutationFn: (planId: string) => activateAdminWorkoutPlan(userId, planId),
-    onSuccess: async (data) => {
-      setGeneralError(null);
-      queryClient.setQueryData(['admin', 'workout-plan', userId, data.plan.id], data);
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
-      if (isPersonalView) {
-        await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-      }
-    },
-    onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Pubblicazione scheda fallita.');
     },
   });
 
@@ -187,15 +133,14 @@ export const AdminUserWorkoutPage = () => {
       setFatValue('');
     },
     onError: (error) => {
-      setGeneralError(isApiError(error) ? error.message : 'Salvataggio pesata fallito.');
+      setGeneralError(isApiError(error) ? error.message : 'Salvataggio check-in fallito.');
     },
   });
 
   const user = detailQuery.data?.user;
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
   const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
-  const backLabel = isAdmin ? 'Torna utenti' : 'Torna clienti';
-
+  const section = isPersonalView ? 'personal' : 'users';
   const title = isPersonalView
     ? 'Le mie schede'
     : user?.userType === 'coach'
@@ -204,24 +149,25 @@ export const AdminUserWorkoutPage = () => {
   const subtitle = user
     ? isPersonalView
       ? 'Gestisci la tua scheda personale, lo storico check-in e le versioni workout.'
-      : `Stai gestendo ${user.fullName} con storico schede, check-in e assegnazione coach.`
+      : `Profilo di ${user.fullName} con storico schede, check-in e assegnazione coach.`
     : 'Gestione completa del profilo selezionato.';
 
   return (
     <>
       <AdminShell
-        section={isPersonalView ? 'personal' : 'editor'}
+        section={section}
         title={title}
         subtitle={subtitle}
         onLogout={handleLogout}
-        hideMobileNavigation
         actions={
-          <Link
-            to="/admin/users"
-            className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto text-center"
-          >
-            {backLabel}
-          </Link>
+          !isPersonalView ? (
+            <Link
+              to="/admin/users"
+              className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto text-center"
+            >
+              Torna utenti
+            </Link>
+          ) : undefined
         }
       >
         {detailQuery.isLoading || (isAdmin && coachesQuery.isLoading) ? (
@@ -381,7 +327,7 @@ export const AdminUserWorkoutPage = () => {
                     <div>
                       <h3 className="text-xl font-bold text-zinc-900">Schede</h3>
                       <p className="text-zinc-500 mt-1">
-                        Crea nuove versioni, scegli quella corrente e modifica la struttura completa.
+                        Crea nuove versioni e apri l’editor dedicato per modificarle o pubblicarle.
                       </p>
                     </div>
                     <button
@@ -399,58 +345,39 @@ export const AdminUserWorkoutPage = () => {
                         Nessuna scheda presente. Crea la prima versione da qui.
                       </div>
                     ) : (
-                      detailQuery.data.workouts.map((workout) => {
-                        const isSelected = workout.id === effectiveSelectedPlanId;
-
-                        return (
-                          <button
-                            key={workout.id}
-                            onClick={() => setSelectedPlanId(workout.id)}
-                            className={`w-full text-left p-5 rounded-2xl border transition ${
-                              isSelected
-                                ? 'border-emerald-400 bg-emerald-50/40 shadow-sm'
-                                : 'border-zinc-200 hover:border-zinc-300 bg-white'
-                            }`}
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-bold text-zinc-900">{workout.name}</p>
-                                  {workout.isCurrent ? (
-                                    <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold">
-                                      Corrente
-                                    </span>
-                                  ) : null}
-                                </div>
-                                <p className="text-sm text-zinc-500 mt-1">
-                                  Aggiornata il {formatDateTime(workout.updatedAt)}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-start">
-                                {!workout.isCurrent ? (
-                                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-zinc-100 text-zinc-700">
-                                    Storico
+                      detailQuery.data.workouts.map((workout) => (
+                        <button
+                          key={workout.id}
+                          onClick={() => {
+                            void navigate({
+                              to: '/admin/users/$userId/workouts/$planId',
+                              params: { userId, planId: workout.id },
+                            });
+                          }}
+                          className="w-full text-left p-5 rounded-2xl border border-zinc-200 hover:border-zinc-300 bg-white transition"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-bold text-zinc-900">{workout.name}</p>
+                                {workout.isCurrent ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold">
+                                    Corrente
                                   </span>
                                 ) : null}
                               </div>
+                              <p className="text-sm text-zinc-500 mt-1">
+                                Aggiornata il {formatDateTime(workout.updatedAt)}
+                              </p>
                             </div>
-                          </button>
-                        );
-                      })
+                            <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-700 text-sm font-semibold shrink-0">
+                              Apri editor
+                            </span>
+                          </div>
+                        </button>
+                      ))
                     )}
                   </div>
-
-                  {selectedPlanSummary && !selectedPlanSummary.isCurrent && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => activateWorkoutMutation.mutate(selectedPlanSummary.id)}
-                        disabled={activateWorkoutMutation.isPending}
-                        className="bg-emerald-500 text-zinc-950 px-4 py-2.5 rounded-2xl font-bold disabled:opacity-50 w-full sm:w-auto"
-                      >
-                        {activateWorkoutMutation.isPending ? 'Pubblicazione...' : 'Imposta come corrente'}
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 <div className="bg-white rounded-[2rem] border border-zinc-200 shadow-sm p-5 md:p-6 space-y-4">
@@ -492,21 +419,6 @@ export const AdminUserWorkoutPage = () => {
                     )}
                   </div>
                 </div>
-
-                {effectiveSelectedPlanId ? (
-                  <AdminWorkoutPlanBuilder
-                    key={selectedPlanSummary?.id ?? 'new-plan'}
-                    plan={workoutPlanQuery.data?.plan ?? null}
-                    isSaving={saveMutation.isPending}
-                    saveError={saveError}
-                    saveOk={saveOk}
-                    onSave={(payload) => {
-                      setSaveOk(null);
-                      setSaveError(null);
-                      saveMutation.mutate({ planId: effectiveSelectedPlanId, payload });
-                    }}
-                  />
-                ) : null}
               </div>
             </div>
           </div>

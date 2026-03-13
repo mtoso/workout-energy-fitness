@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Dumbbell, FileText, Home, LogOut, Users } from 'lucide-react';
+import { Dumbbell, FileText, LogOut, Users } from 'lucide-react';
 import { meQueryOptions } from '../../lib/api/query-options';
 
-export type AdminSection = 'dashboard' | 'users' | 'personal' | 'editor';
+export type AdminSection = 'users' | 'personal';
 
 interface AdminShellProps {
   section: AdminSection;
@@ -20,7 +20,7 @@ interface NavItem {
   id: AdminSection;
   label: string;
   shortLabel: string;
-  icon: typeof Home;
+  icon: typeof Users;
   onClick: () => void;
   disabled?: boolean;
 }
@@ -53,15 +53,6 @@ export const AdminShell = ({
 
   const navItems: NavItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      shortLabel: 'HOME',
-      icon: Home,
-      onClick: () => {
-        void navigate({ to: '/admin' });
-      },
-    },
-    {
       id: 'users',
       label: 'Utenti',
       shortLabel: 'UTENTI',
@@ -78,7 +69,7 @@ export const AdminShell = ({
       onClick: () => {
         if (!currentUser) return;
         void navigate({
-          to: '/admin/users/$userId/workout',
+          to: '/admin/users/$userId',
           params: { userId: currentUser.id },
         });
       },
@@ -86,8 +77,7 @@ export const AdminShell = ({
     },
   ];
 
-  const isItemActive = (item: NavItem) =>
-    section === item.id || (section === 'editor' && (item.id === 'users' || item.id === 'personal'));
+  const isItemActive = (item: NavItem) => section === item.id;
 
   return (
     <div className="min-h-[100dvh] bg-zinc-100 md:flex">
