@@ -1,4 +1,4 @@
-import { fail, getManagedUserDetail, requireManager } from './_lib';
+import { fail, getManagedUserDetail, json, requireManager } from './_lib';
 import type { Env } from './_lib';
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env, params }) => {
@@ -10,5 +10,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env, params })
     return fail(400, 'invalid_user', "L'identificativo utente è obbligatorio.");
   }
 
-  return getManagedUserDetail(env, auth, userId);
+  const detail = await getManagedUserDetail(env, auth, userId);
+  return detail instanceof Response ? detail : json(detail);
 };

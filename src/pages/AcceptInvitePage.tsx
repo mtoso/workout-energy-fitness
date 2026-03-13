@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { AuthUser } from '../types/auth';
@@ -94,6 +95,12 @@ export const AcceptInvitePage = () => {
     };
   }, [googleClientId, inviteToken]);
 
+  const handleEmailSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    emailMutation.mutate({ inviteToken, email, password });
+  };
+
   if (!inviteToken) {
     return (
       <div className="min-h-screen bg-zinc-100 flex items-center justify-center px-6">
@@ -126,30 +133,45 @@ export const AcceptInvitePage = () => {
 
         <div className={cardClass}>
           <h2 className="font-semibold text-zinc-900">Registrazione con email</h2>
-          <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2"
-            placeholder="Email invitata"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <input
-            className="w-full rounded-xl border border-zinc-200 px-3 py-2"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <button
-            className="w-full bg-zinc-900 text-white rounded-xl py-2.5 font-semibold disabled:opacity-50"
-            onClick={() => {
-              setError(null);
-              emailMutation.mutate({ inviteToken, email, password });
-            }}
-            disabled={emailMutation.isPending}
-          >
-            {emailMutation.isPending ? 'Registrazione...' : 'Registrati con email'}
-          </button>
+          <form className="space-y-4" onSubmit={handleEmailSubmit} noValidate>
+            <div>
+              <label htmlFor="invite-email" className="sr-only">
+                Email invitata
+              </label>
+              <input
+                id="invite-email"
+                name="email"
+                autoComplete="email"
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2"
+                placeholder="Email invitata"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="invite-password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="invite-password"
+                name="password"
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2"
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-zinc-900 text-white rounded-xl py-2.5 font-semibold disabled:opacity-50"
+              disabled={emailMutation.isPending}
+            >
+              {emailMutation.isPending ? 'Registrazione...' : 'Registrati con email'}
+            </button>
+          </form>
         </div>
 
         <div className={cardClass}>

@@ -308,10 +308,12 @@ export const AdminWorkoutPlanBuilder = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label htmlFor="workout-plan-title" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Titolo scheda
             </label>
             <input
+              id="workout-plan-title"
+              name="title"
               value={draftTitle}
               onChange={(event) => setDraftTitle(event.target.value)}
               className="w-full rounded-2xl bg-zinc-50 border border-zinc-200 px-4 py-3 font-semibold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -466,10 +468,12 @@ export const AdminWorkoutPlanBuilder = ({
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="w-full flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    <label htmlFor={`day-name-${activeDay.id}`} className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                       Nome giorno
                     </label>
                     <input
+                      id={`day-name-${activeDay.id}`}
+                      name={`day-name-${activeDay.id}`}
                       type="text"
                       value={activeDay.name}
                       onChange={(event) =>
@@ -482,10 +486,12 @@ export const AdminWorkoutPlanBuilder = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                    <label htmlFor={`day-focus-${activeDay.id}`} className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                       Focus muscolare
                     </label>
                     <input
+                      id={`day-focus-${activeDay.id}`}
+                      name={`day-focus-${activeDay.id}`}
                       type="text"
                       value={activeDay.focus}
                       onChange={(event) =>
@@ -577,6 +583,9 @@ export const AdminWorkoutPlanBuilder = ({
                               {groupIndex + 1}
                             </div>
                             <input
+                              id={`single-name-${group.id}`}
+                              name={`single-name-${group.id}`}
+                              aria-label={`Nome esercizio ${groupIndex + 1}`}
                               type="text"
                               value={item?.name ?? ''}
                               onChange={(event) =>
@@ -594,8 +603,11 @@ export const AdminWorkoutPlanBuilder = ({
 
                           <div className="w-full lg:w-auto flex flex-row lg:contents gap-2">
                             <div className="flex-1 lg:w-20 lg:mx-2 shrink-0">
-                              <label className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Serie</label>
+                              <label htmlFor={`single-sets-${group.id}`} className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Serie</label>
                               <input
+                                id={`single-sets-${group.id}`}
+                                name={`single-sets-${group.id}`}
+                                aria-label={`Serie esercizio ${groupIndex + 1}`}
                                 type="number"
                                 min={1}
                                 value={group.sets}
@@ -609,8 +621,11 @@ export const AdminWorkoutPlanBuilder = ({
                               />
                             </div>
                             <div className="flex-[1.5] lg:w-32 lg:mx-2 shrink-0">
-                              <label className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Ripetizioni</label>
+                              <label htmlFor={`single-reps-${group.id}`} className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Ripetizioni</label>
                               <input
+                                id={`single-reps-${group.id}`}
+                                name={`single-reps-${group.id}`}
+                                aria-label={`Ripetizioni esercizio ${groupIndex + 1}`}
                                 type="text"
                                 value={item?.reps ?? ''}
                                 onChange={(event) =>
@@ -626,9 +641,12 @@ export const AdminWorkoutPlanBuilder = ({
                               />
                             </div>
                             <div className="flex-1 lg:w-24 lg:mx-2 shrink-0 relative">
-                              <label className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Recupero</label>
+                              <label htmlFor={`single-rest-${group.id}`} className="lg:hidden text-[9px] font-bold text-zinc-400 uppercase mb-1 block">Recupero</label>
                               <Clock3 className="hidden lg:block absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                               <input
+                                id={`single-rest-${group.id}`}
+                                name={`single-rest-${group.id}`}
+                                aria-label={`Recupero esercizio ${groupIndex + 1}`}
                                 type="text"
                                 value={group.rest}
                                 onChange={(event) =>
@@ -645,6 +663,9 @@ export const AdminWorkoutPlanBuilder = ({
                           <div className="w-full lg:w-auto flex items-center gap-2">
                             <div className="flex-1 lg:w-48 lg:ml-2 shrink-0">
                               <input
+                                id={`single-notes-${group.id}`}
+                                name={`single-notes-${group.id}`}
+                                aria-label={`Note esercizio ${groupIndex + 1}`}
                                 type="text"
                                 value={group.notes}
                                 onChange={(event) =>
@@ -693,6 +714,9 @@ export const AdminWorkoutPlanBuilder = ({
                                 {String.fromCharCode(97 + itemIndex)}
                               </div>
                               <input
+                                id={`superset-name-${group.id}-${item.id}`}
+                                name={`superset-name-${group.id}-${item.id}`}
+                                aria-label={`Nome esercizio ${groupIndex + 1}${String.fromCharCode(97 + itemIndex)}`}
                                 type="text"
                                 value={item.name}
                                 onChange={(event) =>
@@ -727,8 +751,11 @@ export const AdminWorkoutPlanBuilder = ({
 
                         <div className="w-full lg:w-auto flex flex-row lg:contents gap-2 pl-2 lg:pl-0">
                           <div className="flex-1 lg:w-20 lg:mx-2 shrink-0 flex flex-col lg:justify-center">
-                            <label className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-1 block">Serie</label>
+                            <label htmlFor={`superset-sets-${group.id}`} className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-1 block">Serie</label>
                             <input
+                              id={`superset-sets-${group.id}`}
+                              name={`superset-sets-${group.id}`}
+                              aria-label={`Serie super serie ${groupIndex + 1}`}
                               type="number"
                               min={1}
                               value={group.sets}
@@ -742,9 +769,12 @@ export const AdminWorkoutPlanBuilder = ({
                             />
                           </div>
                           <div className="flex-[1.5] lg:w-32 lg:mx-2 shrink-0 flex flex-col justify-center gap-2">
-                            <label className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-0 block">Reps</label>
-                            {group.items.map((item) => (
+                            <p className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-0 block">Reps</p>
+                            {group.items.map((item, itemIndex) => (
                               <input
+                                id={`superset-reps-${group.id}-${item.id}`}
+                                name={`superset-reps-${group.id}-${item.id}`}
+                                aria-label={`Ripetizioni esercizio ${groupIndex + 1}${String.fromCharCode(97 + itemIndex)}`}
                                 key={`reps-${item.id}`}
                                 type="text"
                                 value={item.reps}
@@ -764,8 +794,11 @@ export const AdminWorkoutPlanBuilder = ({
                             ))}
                           </div>
                           <div className="flex-1 lg:w-24 lg:mx-2 shrink-0 flex flex-col lg:justify-center">
-                            <label className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-1 block">Recupero</label>
+                            <label htmlFor={`superset-rest-${group.id}`} className="lg:hidden text-[9px] font-bold text-emerald-600/70 uppercase mb-1 block">Recupero</label>
                             <input
+                              id={`superset-rest-${group.id}`}
+                              name={`superset-rest-${group.id}`}
+                              aria-label={`Recupero super serie ${groupIndex + 1}`}
                               type="text"
                               value={group.rest}
                               onChange={(event) =>
@@ -782,6 +815,9 @@ export const AdminWorkoutPlanBuilder = ({
                         <div className="w-full lg:w-auto flex flex-col lg:flex-row lg:contents gap-2 pl-2 lg:pl-0 mt-1 lg:mt-0">
                           <div className="flex-1 lg:w-48 lg:ml-2 shrink-0 flex items-center">
                             <textarea
+                              id={`superset-notes-${group.id}`}
+                              name={`superset-notes-${group.id}`}
+                              aria-label={`Note super serie ${groupIndex + 1}`}
                               value={group.notes}
                               onChange={(event) =>
                                 handleUpdateGroup(group.id, (current) => ({

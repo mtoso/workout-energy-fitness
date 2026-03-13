@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { AuthUser } from '../types/auth';
@@ -92,6 +93,12 @@ export const LoginPage = () => {
     };
   }, [googleClientId]);
 
+  const handleEmailSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    emailMutation.mutate({ email, password });
+  };
+
   return (
     <div className="min-h-screen bg-zinc-100 px-4 py-8 md:py-12">
       <div className="max-w-lg mx-auto">
@@ -109,31 +116,48 @@ export const LoginPage = () => {
         )}
 
         <div className={cardClass}>
-          <input
-            className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <input
-            className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <div className="max-w-[400px] mx-auto w-full space-y-4 pt-1">
-            <button
-              className="w-full bg-zinc-900 text-white rounded-full h-[44px] font-semibold text-base disabled:opacity-50"
-              onClick={() => {
-                setError(null);
-                emailMutation.mutate({ email, password });
-              }}
-              disabled={emailMutation.isPending}
-            >
-              {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
-            </button>
+          <form className="space-y-4" onSubmit={handleEmailSubmit} noValidate>
+            <div>
+              <label htmlFor="login-email" className="sr-only">
+                Email
+              </label>
+              <input
+                id="login-email"
+                name="email"
+                autoComplete="email"
+                className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="login-password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="login-password"
+                name="password"
+                autoComplete="current-password"
+                className="w-full rounded-2xl border border-zinc-200 px-5 py-3.5 text-lg bg-zinc-50"
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+            <div className="max-w-[400px] mx-auto w-full space-y-4 pt-1">
+              <button
+                type="submit"
+                className="w-full bg-zinc-900 text-white rounded-full h-[44px] font-semibold text-base disabled:opacity-50"
+                disabled={emailMutation.isPending}
+              >
+                {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
+              </button>
+            </div>
+          </form>
+          <div className="max-w-[400px] mx-auto w-full">
             <div ref={googleButtonRef} className="min-h-[44px] w-full" />
           </div>
           {(googleConfigError || googleSetupError) && (

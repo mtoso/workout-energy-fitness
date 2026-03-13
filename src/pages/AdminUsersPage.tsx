@@ -148,8 +148,13 @@ export const AdminUsersPage = () => {
 
         <div className="bg-white border border-zinc-200 rounded-[2rem] p-4 md:p-5 shadow-sm space-y-4">
           <div className="relative max-w-md">
+            <label htmlFor="admin-users-search" className="sr-only">
+              Cerca utenti
+            </label>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
             <input
+              id="admin-users-search"
+              name="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Cerca per nome, email, tipo o coach..."
@@ -158,7 +163,12 @@ export const AdminUsersPage = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-3">
+            <label htmlFor="admin-users-filter-type" className="sr-only">
+              Filtra per tipo utente
+            </label>
             <select
+              id="admin-users-filter-type"
+              name="userTypeFilter"
               value={filterUserType}
               onChange={(event) => setFilterUserType(event.target.value as 'all' | UserType)}
               className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -168,7 +178,12 @@ export const AdminUsersPage = () => {
               <option value="coach">Coach</option>
             </select>
 
+            <label htmlFor="admin-users-filter-status" className="sr-only">
+              Filtra per stato
+            </label>
             <select
+              id="admin-users-filter-status"
+              name="statusFilter"
               value={filterStatus}
               onChange={(event) => setFilterStatus(event.target.value as 'all' | UserStatus)}
               className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -179,7 +194,12 @@ export const AdminUsersPage = () => {
               <option value="disabled">Disabilitati</option>
             </select>
 
+            <label htmlFor="admin-users-filter-coach" className="sr-only">
+              Filtra per coach
+            </label>
             <select
+              id="admin-users-filter-coach"
+              name="coachFilter"
               value={filterCoachUserId}
               onChange={(event) => setFilterCoachUserId(event.target.value as 'all' | string)}
               className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"

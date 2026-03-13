@@ -258,7 +258,12 @@ export const AdminUserDetailPage = () => {
                     <div className="flex items-center gap-2 text-zinc-900 font-bold">
                       <Users size={18} /> Coach assegnato
                     </div>
+                    <label htmlFor="assigned-coach-select" className="sr-only">
+                      Coach assegnato
+                    </label>
                     <select
+                      id="assigned-coach-select"
+                      name="coachUserId"
                       value={detailQuery.data.coach?.id ?? ''}
                       onChange={(event) => assignCoachMutation.mutate(event.target.value || null)}
                       disabled={assignCoachMutation.isPending}
@@ -443,8 +448,10 @@ export const AdminUserDetailPage = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Data</label>
+                <label htmlFor="checkin-date" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Data</label>
                 <input
+                  id="checkin-date"
+                  name="recordedAt"
                   type="date"
                   value={weightDate}
                   onChange={(event) => setWeightDate(event.target.value)}
@@ -453,8 +460,10 @@ export const AdminUserDetailPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Peso (Kg)</label>
+                  <label htmlFor="checkin-weight" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Peso (Kg)</label>
                   <input
+                    id="checkin-weight"
+                    name="weight"
                     type="number"
                     step="0.1"
                     placeholder="es. 85.5"
@@ -464,10 +473,12 @@ export const AdminUserDetailPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                  <label htmlFor="checkin-fat" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                     Grasso % <span className="font-normal normal-case text-zinc-400">(Opz.)</span>
                   </label>
                   <input
+                    id="checkin-fat"
+                    name="fat"
                     type="number"
                     step="0.1"
                     placeholder="es. 15.2"

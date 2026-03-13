@@ -71,10 +71,12 @@ export const AdminInviteModal = ({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label htmlFor="invite-user-type" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Tipo utente
             </label>
             <select
+              id="invite-user-type"
+              name="userType"
               value={userType}
               onChange={(event) => onUserTypeChange(event.target.value === 'coach' ? 'coach' : 'client')}
               className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -85,10 +87,12 @@ export const AdminInviteModal = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label htmlFor="invite-full-name" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Nome completo
             </label>
             <input
+              id="invite-full-name"
+              name="fullName"
               type="text"
               value={fullName}
               onChange={(event) => onFullNameChange(event.target.value)}
@@ -98,12 +102,14 @@ export const AdminInviteModal = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label htmlFor="invite-email-address" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Email invitata
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
               <input
+                id="invite-email-address"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(event) => onEmailChange(event.target.value)}
@@ -115,10 +121,12 @@ export const AdminInviteModal = ({
 
           {!isCoachUser && (
             <div>
-              <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+              <label htmlFor="invite-coach-user-id" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Coach assegnato
               </label>
               <select
+                id="invite-coach-user-id"
+                name="coachUserId"
                 value={coachUserId ?? ''}
                 onChange={(event) => onCoachUserIdChange(event.target.value || null)}
                 className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -134,10 +142,12 @@ export const AdminInviteModal = ({
           )}
 
           <div>
-            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label htmlFor="invite-expiry-hours" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Scadenza invito (ore)
             </label>
             <input
+              id="invite-expiry-hours"
+              name="expiresInHours"
               type="number"
               min={1}
               max={720}

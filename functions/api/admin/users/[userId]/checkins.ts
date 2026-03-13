@@ -1,4 +1,4 @@
-import { createBodyCheckin, fail, readJson, requireManager } from './_lib';
+import { createBodyCheckin, fail, json, readJson, requireManager } from './_lib';
 import type { Env } from './_lib';
 
 interface CreateCheckinPayload {
@@ -30,9 +30,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
     return fail(400, 'invalid_payload', 'La massa grassa deve essere compresa tra 0 e 100.');
   }
 
-  return createBodyCheckin(env, auth, userId, {
+  const detail = await createBodyCheckin(env, auth, userId, {
     recordedAt: bodyOrResponse.recordedAt.trim(),
     weight,
     fat,
   });
+
+  return detail instanceof Response ? detail : json(detail);
 };
