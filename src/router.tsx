@@ -14,6 +14,7 @@ import { UserAppPage } from './pages/UserAppPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminUserWorkoutPage } from './pages/AdminUserWorkoutPage';
 import { AdminHomePage } from './pages/AdminHomePage';
+import { AdminCoachesPage } from './pages/AdminCoachesPage';
 
 const requireAuthenticated = async () => {
   try {
@@ -89,6 +90,13 @@ const adminUsersRoute = createRoute({
   component: AdminUsersPage,
 });
 
+const adminCoachesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin/coaches',
+  beforeLoad: requireAdmin,
+  component: AdminCoachesPage,
+});
+
 const adminUserWorkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users/$userId/workout',
@@ -104,6 +112,7 @@ const routeTree = rootRoute.addChildren([
   acceptInviteRoute,
   adminRoute,
   adminUsersRoute,
+  adminCoachesRoute,
   adminUserWorkoutRoute,
 ]);
 

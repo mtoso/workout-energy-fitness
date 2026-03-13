@@ -7,6 +7,8 @@ import type { Env, UserRole } from '../_lib/types';
 interface CreateInvitePayload {
   email: string;
   role?: UserRole;
+  fullName?: string;
+  coachUserId?: string | null;
   expiresInHours?: number;
 }
 
@@ -21,6 +23,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const email = normalizeEmail(bodyOrResponse.email || '');
   const role = bodyOrResponse.role === 'admin' ? 'admin' : 'customer';
+  const fullName =
+    typeof bodyOrResponse.fullName === 'string' && bodyOrResponse.fullName.trim()
+      ? bodyOrResponse.fullName.trim()
+      : null;
+  const coachUserId =
+    role === 'customer' && typeof bodyOrResponse.coachUserId === 'string'
+      ? bodyOrResponse.coachUserId.trim() || null
+      : null;
   const expiresInHours = Number(bodyOrResponse.expiresInHours);
   const ttlHours =
     Number.isFinite(expiresInHours) && expiresInHours >= 1 && expiresInHours <= 24 * 30
@@ -46,6 +56,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return fail(409, 'account_exists', 'An account with this email already exists.');
   }
 
+  if (coachUserId) {
+    const coach = await env.DB.prepare(
+      `
+        SELECT id
+        FROM users
+        WHERE id = ?
+          AND role = 'admin'
+        LIMIT 1
+      `
+    )
+      .bind(coachUserId)
+      .first();
+
+    if (!coach) {
+      return fail(400, 'invalid_coach', 'Assigned coach must be an existing admin user.');
+    }
+  }
+
   const inviteToken = randomToken(32);
   const inviteTokenHash = await sha256Hex(inviteToken);
   const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString();
@@ -56,17 +84,21 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         id,
         email,
         role,
+        full_name,
+        coach_user_id,
         token_hash,
         invited_by_user_id,
         expires_at
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
     .bind(
       crypto.randomUUID(),
       email,
       role,
+      fullName,
+      coachUserId,
       inviteTokenHash,
       adminAuth.user.id,
       expiresAt
@@ -82,6 +114,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       expiresAt,
       role,
       email,
+      fullName,
+      coachUserId,
     },
     201
   );

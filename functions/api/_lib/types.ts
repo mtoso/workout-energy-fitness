@@ -25,6 +25,8 @@ export interface InviteRow {
   id: string;
   email: string;
   role: UserRole;
+  full_name: string | null;
+  coach_user_id: string | null;
   expires_at: string;
   accepted_at: string | null;
 }

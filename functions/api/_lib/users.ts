@@ -34,7 +34,7 @@ export const findInviteByToken = async (
   const tokenHash = await sha256Hex(inviteToken);
   return env.DB.prepare(
     `
-      SELECT id, email, role, expires_at, accepted_at
+      SELECT id, email, role, full_name, coach_user_id, expires_at, accepted_at
       FROM invites
       WHERE token_hash = ?
         AND accepted_at IS NULL
@@ -80,7 +80,7 @@ export const createUserFromInvite = async (
   const identityId = crypto.randomUUID();
 
   try {
-    await env.DB.batch([
+    const statements = [
       env.DB
         .prepare(
           `
@@ -110,7 +110,34 @@ export const createUserFromInvite = async (
           identity.providerSubject,
           identity.emailVerified ? 1 : 0
         ),
-    ]);
+      env.DB
+        .prepare(
+          `
+            INSERT INTO user_profiles (user_id, full_name)
+            VALUES (?, ?)
+          `
+        )
+        .bind(userId, invite.full_name),
+    ];
+
+    if (invite.role === 'customer' && invite.coach_user_id) {
+      statements.push(
+        env.DB
+          .prepare(
+            `
+              INSERT INTO coach_assignments (
+                customer_user_id,
+                coach_user_id,
+                assigned_by_user_id
+              )
+              VALUES (?, ?, ?)
+            `
+          )
+          .bind(userId, invite.coach_user_id, null)
+      );
+    }
+
+    await env.DB.batch(statements);
 
     if (identity.provider === 'email') {
       if (!password) {

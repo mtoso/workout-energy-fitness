@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getMe } from './auth';
 import {
-  getAdminUserWorkoutPlan,
+  getAdminCoaches,
+  getAdminUserDetail,
   getAdminUsers,
   getMyWorkoutPlan,
 } from './workout';
@@ -28,9 +29,16 @@ export const adminUsersQueryOptions = () =>
     staleTime: 30_000,
   });
 
-export const adminWorkoutQueryOptions = (userId: string) =>
+export const adminCoachesQueryOptions = () =>
   queryOptions({
-    queryKey: ['admin', 'workout', userId],
-    queryFn: () => getAdminUserWorkoutPlan(userId),
+    queryKey: ['admin', 'coaches'],
+    queryFn: getAdminCoaches,
+    staleTime: 30_000,
+  });
+
+export const adminUserDetailQueryOptions = (userId: string) =>
+  queryOptions({
+    queryKey: ['admin', 'user-detail', userId],
+    queryFn: () => getAdminUserDetail(userId),
     staleTime: 30_000,
   });
