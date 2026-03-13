@@ -1,7 +1,7 @@
 import { issueSession } from '../../_lib/auth';
 import { normalizeEmail, readJson } from '../../_lib/http';
 import { fail, json } from '../../_lib/response';
-import { createUserFromInvite, findInviteByToken } from '../../_lib/users';
+import { activateInvitedUser, findInvitedUserByToken, getAuthUserById } from '../../_lib/users';
 import type { Env } from '../../_lib/types';
 
 interface EmailSignupPayload {
@@ -22,22 +22,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return fail(400, 'invalid_payload', 'Invite token, email and password are required.');
   }
 
-  if (password.length < 8) {
-    return fail(400, 'invalid_password', 'Password must be at least 8 characters.');
-  }
-
-  const invite = await findInviteByToken(env, inviteToken);
-  if (!invite) {
+  const invitedUser = await findInvitedUserByToken(env, inviteToken);
+  if (!invitedUser) {
     return fail(400, 'invalid_invite', 'Invite is invalid, expired, or already used.');
   }
 
-  if (normalizeEmail(invite.email) !== email) {
-    return fail(400, 'email_mismatch', 'Invite email does not match signup email.');
-  }
-
-  const createResult = await createUserFromInvite(
+  const activated = await activateInvitedUser(
     env,
-    invite,
+    invitedUser,
     email,
     {
       provider: 'email',
@@ -47,21 +39,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     password
   );
 
-  if (createResult instanceof Response) return createResult;
+  if (activated instanceof Response) return activated;
 
-  const { cookieHeader } = await issueSession(request, env, createResult.userId);
+  const user = await getAuthUserById(env, activated.userId);
+  if (!user) {
+    return fail(500, 'user_not_found', 'Unable to load account.');
+  }
 
-  return json(
-    {
-      user: {
-        id: createResult.userId,
-        email,
-        role: invite.role,
-      },
-    },
-    201,
-    {
-      'set-cookie': cookieHeader,
-    }
-  );
+  const { cookieHeader } = await issueSession(request, env, activated.userId);
+
+  return json({ user }, 201, { 'set-cookie': cookieHeader });
 };

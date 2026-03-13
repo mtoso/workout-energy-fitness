@@ -1,8 +1,14 @@
-export type UserRole = 'admin' | 'customer';
+export type UserType = 'client' | 'coach';
+export type UserStatus = 'invited' | 'active' | 'disabled';
 export type AuthProvider = 'email' | 'google';
 
 export interface AuthUser {
   id: string;
   email: string;
-  role: UserRole;
+  fullName: string;
+  userType: UserType;
+  isAdmin: boolean;
+  status: UserStatus;
+  coachUserId: string | null;
+  canManageClients: boolean;
 }

@@ -51,8 +51,7 @@ export const UserAppPage = ({ screen }: UserAppPageProps) => {
   }
 
   if (workoutQuery.isError) {
-    const isAuthError =
-      isApiError(workoutQuery.error) && workoutQuery.error.status === 401;
+    const isAuthError = isApiError(workoutQuery.error) && workoutQuery.error.status === 401;
 
     return (
       <div
@@ -77,9 +76,9 @@ export const UserAppPage = ({ screen }: UserAppPageProps) => {
       }}
       initialSchedaData={plan?.days ?? []}
       userEmail={meQuery.data.user.email}
-      isAdmin={meQuery.data.user.role === 'admin'}
+      isAdmin={meQuery.data.user.canManageClients}
       onOpenAdmin={() => {
-        void navigate({ to: '/admin/users' });
+        void navigate({ to: '/admin' });
       }}
       onLogout={() => {
         disableGoogleAutoSelect();

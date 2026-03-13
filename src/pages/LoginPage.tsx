@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
+import type { AuthUser } from '../types/auth';
 import { loginEmail, loginGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
 import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
@@ -22,16 +23,16 @@ export const LoginPage = () => {
     ? 'Google login non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
 
-  const handleSuccess = async (role: 'admin' | 'customer') => {
+  const handleSuccess = async (user: AuthUser) => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-    await navigate({ to: role === 'admin' ? '/admin' : '/' });
+    await navigate({ to: user.canManageClients ? '/admin' : '/' });
   };
 
   const emailMutation = useMutation({
     mutationFn: loginEmail,
     onSuccess: (data) => {
-      void handleSuccess(data.user.role);
+      void handleSuccess(data.user);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Login email fallito.');
@@ -41,7 +42,7 @@ export const LoginPage = () => {
   const googleMutation = useMutation({
     mutationFn: loginGoogle,
     onSuccess: (data) => {
-      void handleSuccess(data.user.role);
+      void handleSuccess(data.user);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Login Google fallito.');
@@ -93,9 +94,7 @@ export const LoginPage = () => {
       <div className="max-w-xl mx-auto space-y-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-zinc-900">Accedi</h1>
-          <p className="text-zinc-500 mt-2">
-            Login supportato: Email e Google
-          </p>
+          <p className="text-zinc-500 mt-2">Login supportato: Email e Google</p>
         </div>
 
         {error && (
@@ -135,14 +134,11 @@ export const LoginPage = () => {
         <div className={cardClass}>
           <h2 className="font-semibold text-zinc-900">Google</h2>
           <p className="text-sm text-zinc-500">
-            Accesso con Google Identity Services. Per il collegamento automatico
-            supportiamo account Gmail o Google Workspace gestiti.
+            Accesso con Google Identity Services. Il collegamento automatico usa account Gmail o Google Workspace gestiti.
           </p>
           <div ref={googleButtonRef} className="min-h-12" />
           {(googleConfigError || googleSetupError) && (
-            <p className="text-sm text-red-700">
-              {googleConfigError || googleSetupError}
-            </p>
+            <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
           )}
           {googleMutation.isPending && (
             <p className="text-sm text-zinc-500">Accesso Google in corso...</p>

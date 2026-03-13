@@ -40,7 +40,7 @@ export const ProfileScreen = ({
             onClick={onOpenAdmin}
             className="mb-6 w-full bg-amber-100 text-amber-900 px-4 py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition"
           >
-            <Shield size={16} /> Apri Backoffice Admin
+            <Shield size={16} /> Apri Backoffice
           </button>
         )}
 

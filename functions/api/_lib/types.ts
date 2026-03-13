@@ -1,4 +1,5 @@
-export type UserRole = 'admin' | 'customer';
+export type UserType = 'client' | 'coach';
+export type UserStatus = 'invited' | 'active' | 'disabled';
 export type AuthProvider = 'email' | 'google';
 
 export interface Env {
@@ -12,7 +13,12 @@ export interface Env {
 export interface AuthUser {
   id: string;
   email: string;
-  role: UserRole;
+  fullName: string;
+  userType: UserType;
+  isAdmin: boolean;
+  status: UserStatus;
+  coachUserId: string | null;
+  canManageClients: boolean;
 }
 
 export interface AuthSession {
@@ -21,12 +27,25 @@ export interface AuthSession {
   user: AuthUser;
 }
 
-export interface InviteRow {
+export interface UserRow {
   id: string;
   email: string;
-  role: UserRole;
   full_name: string | null;
+  user_type: UserType;
+  is_admin: number;
+  status: UserStatus;
   coach_user_id: string | null;
-  expires_at: string;
-  accepted_at: string | null;
+  invited_by_user_id: string | null;
+  invite_token_hash: string | null;
+  invite_expires_at: string | null;
+  invited_at: string | null;
+  activated_at: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvitedUserRow extends UserRow {
+  invite_token_hash: string;
+  invite_expires_at: string;
 }

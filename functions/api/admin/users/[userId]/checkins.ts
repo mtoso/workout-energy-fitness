@@ -1,4 +1,4 @@
-import { createBodyCheckin, fail, json, readJson, requireAdmin } from './_lib';
+import { createBodyCheckin, fail, readJson, requireManager } from './_lib';
 import type { Env } from './_lib';
 
 interface CreateCheckinPayload {
@@ -8,7 +8,7 @@ interface CreateCheckinPayload {
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }) => {
-  const auth = await requireAdmin(request, env);
+  const auth = await requireManager(request, env);
   if (auth instanceof Response) return auth;
 
   const userId = params.userId;
@@ -20,9 +20,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
   if (bodyOrResponse instanceof Response) return bodyOrResponse;
 
   const weight = Number(bodyOrResponse.weight);
-  const fat = bodyOrResponse.fat === undefined || bodyOrResponse.fat === null
-    ? null
-    : Number(bodyOrResponse.fat);
+  const fat = bodyOrResponse.fat === undefined || bodyOrResponse.fat === null ? null : Number(bodyOrResponse.fat);
 
   if (!bodyOrResponse.recordedAt?.trim() || !Number.isFinite(weight) || weight <= 0) {
     return fail(400, 'invalid_payload', 'Recorded date and positive weight are required.');
@@ -32,13 +30,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env, params }
     return fail(400, 'invalid_payload', 'Body fat must be between 0 and 100.');
   }
 
-  const detail = await createBodyCheckin(env, userId, auth.user.id, {
+  return createBodyCheckin(env, auth, userId, {
     recordedAt: bodyOrResponse.recordedAt.trim(),
     weight,
     fat,
   });
-
-  if (detail instanceof Response) return detail;
-
-  return json(detail, 201);
 };

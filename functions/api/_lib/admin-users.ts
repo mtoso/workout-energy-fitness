@@ -1,63 +1,132 @@
 import { listWorkoutPlansForUser } from './admin-workouts';
+import { displayNameFromEmail } from './names';
+import { requireManagedUserAccess } from './guards';
 import { fail } from './response';
-import type { Env } from './types';
+import type { AuthSession, Env, UserStatus, UserType } from './types';
 
-export const displayNameFromEmail = (email: string) =>
-  email
-    .split('@')[0]
-    .split(/[._-]/)
-    .filter(Boolean)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(' ');
+const mapCoachSummary = (row: {
+  id: string;
+  email: string;
+  full_name: string | null;
+  is_admin: number;
+  status: UserStatus;
+  assigned_clients?: number;
+}) => ({
+  id: row.id,
+  email: row.email,
+  fullName: row.full_name?.trim() || displayNameFromEmail(row.email),
+  isAdmin: Boolean(row.is_admin),
+  status: row.status,
+  assignedClientCount: Number(row.assigned_clients || 0),
+});
 
-export const listAdminUsersWithProfiles = async (env: Env, role?: 'admin' | 'customer') => {
-  const whereRole = role ? 'WHERE u.role = ?' : '';
-  const statement = env.DB.prepare(
-    `
-      SELECT
-        u.id,
-        u.email,
-        u.role,
-        u.is_active,
-        u.created_at,
-        p.full_name,
-        coach.id AS coach_id,
-        coach.email AS coach_email,
-        coach_profile.full_name AS coach_full_name
-      FROM users u
-      LEFT JOIN user_profiles p ON p.user_id = u.id
-      LEFT JOIN coach_assignments ca ON ca.customer_user_id = u.id
-      LEFT JOIN users coach ON coach.id = ca.coach_user_id
-      LEFT JOIN user_profiles coach_profile ON coach_profile.user_id = coach.id
-      ${whereRole}
-      ORDER BY COALESCE(p.full_name, u.email) ASC
-    `
+const mapUserSummary = (row: {
+  id: string;
+  email: string;
+  full_name: string | null;
+  user_type: UserType;
+  is_admin: number;
+  status: UserStatus;
+  created_at: string;
+  activated_at: string | null;
+  last_login_at: string | null;
+  invite_expires_at: string | null;
+  coach_id: string | null;
+  coach_email: string | null;
+  coach_full_name: string | null;
+  coach_is_admin: number | null;
+  coach_status: UserStatus | null;
+}) => ({
+  id: row.id,
+  email: row.email,
+  fullName: row.full_name?.trim() || displayNameFromEmail(row.email),
+  userType: row.user_type,
+  isAdmin: Boolean(row.is_admin),
+  status: row.status,
+  createdAt: row.created_at,
+  activatedAt: row.activated_at,
+  lastLoginAt: row.last_login_at,
+  inviteExpiresAt: row.invite_expires_at,
+  coach:
+    row.coach_id && row.coach_email && row.coach_status
+      ? mapCoachSummary({
+          id: row.coach_id,
+          email: row.coach_email,
+          full_name: row.coach_full_name,
+          is_admin: row.coach_is_admin ?? 0,
+          status: row.coach_status,
+        })
+      : null,
+});
+
+export const listVisibleUsers = async (env: Env, auth: AuthSession) => {
+  const baseSelect = `
+    SELECT
+      u.id,
+      u.email,
+      u.full_name,
+      u.user_type,
+      u.is_admin,
+      u.status,
+      u.created_at,
+      u.activated_at,
+      u.last_login_at,
+      u.invite_expires_at,
+      coach.id AS coach_id,
+      coach.email AS coach_email,
+      coach.full_name AS coach_full_name,
+      coach.is_admin AS coach_is_admin,
+      coach.status AS coach_status
+    FROM users u
+    LEFT JOIN users coach ON coach.id = u.coach_user_id
+  `;
+
+  let result;
+  if (auth.user.isAdmin) {
+    result = await env.DB.prepare(
+      `${baseSelect}
+       WHERE u.id != ?
+       ORDER BY CASE u.user_type WHEN 'coach' THEN 0 ELSE 1 END, COALESCE(u.full_name, u.email) ASC`
+    )
+      .bind(auth.user.id)
+      .all();
+  } else {
+    result = await env.DB.prepare(
+      `${baseSelect}
+       WHERE u.user_type = 'client'
+         AND u.coach_user_id = ?
+       ORDER BY COALESCE(u.full_name, u.email) ASC`
+    )
+      .bind(auth.user.id)
+      .all();
+  }
+
+  return result.results.map((row) =>
+    mapUserSummary({
+      id: String(row.id),
+      email: String(row.email),
+      full_name: typeof row.full_name === 'string' ? row.full_name : null,
+      user_type: row.user_type === 'coach' ? 'coach' : 'client',
+      is_admin: Number(row.is_admin || 0),
+      status: row.status === 'disabled' ? 'disabled' : row.status === 'invited' ? 'invited' : 'active',
+      created_at: String(row.created_at),
+      activated_at: typeof row.activated_at === 'string' ? row.activated_at : null,
+      last_login_at: typeof row.last_login_at === 'string' ? row.last_login_at : null,
+      invite_expires_at: typeof row.invite_expires_at === 'string' ? row.invite_expires_at : null,
+      coach_id: typeof row.coach_id === 'string' ? row.coach_id : null,
+      coach_email: typeof row.coach_email === 'string' ? row.coach_email : null,
+      coach_full_name: typeof row.coach_full_name === 'string' ? row.coach_full_name : null,
+      coach_is_admin: row.coach_is_admin === null || row.coach_is_admin === undefined ? null : Number(row.coach_is_admin),
+      coach_status:
+        row.coach_status === 'disabled'
+          ? 'disabled'
+          : row.coach_status === 'invited'
+            ? 'invited'
+            : row.coach_status === 'active'
+              ? 'active'
+              : null,
+    })
   );
-
-  const result = role ? await statement.bind(role).all() : await statement.all();
-
-  return result.results.map((row) => ({
-    id: String(row.id),
-    email: String(row.email),
-    role: row.role === 'admin' ? 'admin' : 'customer',
-    isActive: Boolean(row.is_active),
-    createdAt: String(row.created_at),
-    fullName:
-      typeof row.full_name === 'string' && row.full_name.trim()
-        ? row.full_name.trim()
-        : displayNameFromEmail(String(row.email)),
-    coach:
-      row.coach_id && row.coach_email
-        ? {
-            id: String(row.coach_id),
-            email: String(row.coach_email),
-            fullName:
-              typeof row.coach_full_name === 'string' && row.coach_full_name.trim()
-                ? row.coach_full_name.trim()
-                : displayNameFromEmail(String(row.coach_email)),
-          }
-        : null,
-  }));
 };
 
 export const listCoaches = async (env: Env) => {
@@ -66,65 +135,78 @@ export const listCoaches = async (env: Env) => {
       SELECT
         u.id,
         u.email,
-        p.full_name,
-        COUNT(ca.customer_user_id) AS assigned_customers
+        u.full_name,
+        u.is_admin,
+        u.status,
+        COUNT(client.id) AS assigned_clients
       FROM users u
-      LEFT JOIN user_profiles p ON p.user_id = u.id
-      LEFT JOIN coach_assignments ca ON ca.coach_user_id = u.id
-      WHERE u.role = 'admin'
-      GROUP BY u.id, u.email, p.full_name
-      ORDER BY COALESCE(p.full_name, u.email) ASC
+      LEFT JOIN users client ON client.coach_user_id = u.id AND client.user_type = 'client'
+      WHERE u.user_type = 'coach'
+      GROUP BY u.id, u.email, u.full_name, u.is_admin, u.status
+      ORDER BY COALESCE(u.full_name, u.email) ASC
     `
   ).all<{
     id: string;
     email: string;
     full_name: string | null;
-    assigned_customers: number;
+    is_admin: number;
+    status: UserStatus;
+    assigned_clients: number;
   }>();
 
-  return coaches.results.map((coach) => ({
-    id: coach.id,
-    email: coach.email,
-    fullName: coach.full_name?.trim() || displayNameFromEmail(coach.email),
-    assignedCustomerCount: Number(coach.assigned_customers || 0),
-  }));
+  return coaches.results.map(mapCoachSummary);
 };
 
-export const getAdminUserDetail = async (env: Env, userId: string) => {
+const loadUserSummaryRow = async (env: Env, userId: string) =>
+  env.DB.prepare(
+    `
+      SELECT
+        u.id,
+        u.email,
+        u.full_name,
+        u.user_type,
+        u.is_admin,
+        u.status,
+        u.created_at,
+        u.activated_at,
+        u.last_login_at,
+        u.invite_expires_at,
+        coach.id AS coach_id,
+        coach.email AS coach_email,
+        coach.full_name AS coach_full_name,
+        coach.is_admin AS coach_is_admin,
+        coach.status AS coach_status
+      FROM users u
+      LEFT JOIN users coach ON coach.id = u.coach_user_id
+      WHERE u.id = ?
+      LIMIT 1
+    `
+  )
+    .bind(userId)
+    .first<{
+      id: string;
+      email: string;
+      full_name: string | null;
+      user_type: UserType;
+      is_admin: number;
+      status: UserStatus;
+      created_at: string;
+      activated_at: string | null;
+      last_login_at: string | null;
+      invite_expires_at: string | null;
+      coach_id: string | null;
+      coach_email: string | null;
+      coach_full_name: string | null;
+      coach_is_admin: number | null;
+      coach_status: UserStatus | null;
+    }>();
+
+export const getManagedUserDetail = async (env: Env, auth: AuthSession, userId: string) => {
+  const targetUser = await requireManagedUserAccess(auth, env, userId);
+  if (targetUser instanceof Response) return targetUser;
+
   const [user, checkins, workouts] = await Promise.all([
-    env.DB.prepare(
-      `
-        SELECT
-          u.id,
-          u.email,
-          u.role,
-          u.is_active,
-          u.created_at,
-          p.full_name,
-          coach.id AS coach_id,
-          coach.email AS coach_email,
-          coach_profile.full_name AS coach_full_name
-        FROM users u
-        LEFT JOIN user_profiles p ON p.user_id = u.id
-        LEFT JOIN coach_assignments ca ON ca.customer_user_id = u.id
-        LEFT JOIN users coach ON coach.id = ca.coach_user_id
-        LEFT JOIN user_profiles coach_profile ON coach_profile.user_id = coach.id
-        WHERE u.id = ?
-        LIMIT 1
-      `
-    )
-      .bind(userId)
-      .first<{
-        id: string;
-        email: string;
-        role: 'admin' | 'customer';
-        is_active: number;
-        created_at: string;
-        full_name: string | null;
-        coach_id: string | null;
-        coach_email: string | null;
-        coach_full_name: string | null;
-      }>(),
+    loadUserSummaryRow(env, targetUser.id),
     env.DB.prepare(
       `
         SELECT id, recorded_at, weight, body_fat
@@ -133,37 +215,31 @@ export const getAdminUserDetail = async (env: Env, userId: string) => {
         ORDER BY datetime(recorded_at) DESC
       `
     )
-      .bind(userId)
+      .bind(targetUser.id)
       .all<{
         id: string;
         recorded_at: string;
         weight: number;
         body_fat: number | null;
       }>(),
-    listWorkoutPlansForUser(env, userId),
+    listWorkoutPlansForUser(env, targetUser.id),
   ]);
 
   if (!user) {
-    return null;
+    return fail(404, 'user_not_found', 'User not found.');
   }
 
   return {
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      isActive: Boolean(user.is_active),
-      createdAt: user.created_at,
-      fullName: user.full_name?.trim() || displayNameFromEmail(user.email),
-    },
+    user: mapUserSummary(user),
     coach:
-      user.coach_id && user.coach_email
-        ? {
+      user.coach_id && user.coach_email && user.coach_status
+        ? mapCoachSummary({
             id: user.coach_id,
             email: user.coach_email,
-            fullName:
-              user.coach_full_name?.trim() || displayNameFromEmail(user.coach_email),
-          }
+            full_name: user.coach_full_name,
+            is_admin: user.coach_is_admin ?? 0,
+            status: user.coach_status,
+          })
         : null,
     checkins: checkins.results.map((checkin) => ({
       id: checkin.id,
@@ -175,71 +251,55 @@ export const getAdminUserDetail = async (env: Env, userId: string) => {
   };
 };
 
-export const assignCoachToCustomer = async (
+export const assignCoachToClient = async (
   env: Env,
-  customerUserId: string,
-  coachUserId: string | null,
-  actorUserId: string
+  clientUserId: string,
+  coachUserId: string | null
 ) => {
-  const customer = await env.DB.prepare(
-    `SELECT id FROM users WHERE id = ? AND role = 'customer' LIMIT 1`
+  const client = await env.DB.prepare(
+    `SELECT id FROM users WHERE id = ? AND user_type = 'client' LIMIT 1`
   )
-    .bind(customerUserId)
+    .bind(clientUserId)
     .first();
 
-  if (!customer) {
-    return fail(404, 'user_not_found', 'Customer not found.');
+  if (!client) {
+    return fail(404, 'user_not_found', 'Client not found.');
   }
 
-  if (!coachUserId) {
-    await env.DB.prepare(`DELETE FROM coach_assignments WHERE customer_user_id = ?`)
-      .bind(customerUserId)
-      .run();
-    return { ok: true };
+  if (coachUserId) {
+    const coach = await env.DB.prepare(
+      `SELECT id FROM users WHERE id = ? AND user_type = 'coach' AND status != 'disabled' LIMIT 1`
+    )
+      .bind(coachUserId)
+      .first();
+
+    if (!coach) {
+      return fail(400, 'invalid_coach', 'Coach must be an existing coach user.');
+    }
   }
 
-  const coach = await env.DB.prepare(
-    `SELECT id FROM users WHERE id = ? AND role = 'admin' LIMIT 1`
+  await env.DB.prepare(
+    `
+      UPDATE users
+      SET coach_user_id = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
   )
-    .bind(coachUserId)
-    .first();
-
-  if (!coach) {
-    return fail(400, 'invalid_coach', 'Coach must be an admin user.');
-  }
-
-  await env.DB.batch([
-    env.DB.prepare(`DELETE FROM coach_assignments WHERE customer_user_id = ?`).bind(customerUserId),
-    env.DB
-      .prepare(
-        `
-          INSERT INTO coach_assignments (
-            customer_user_id,
-            coach_user_id,
-            assigned_by_user_id
-          )
-          VALUES (?, ?, ?)
-        `
-      )
-      .bind(customerUserId, coachUserId, actorUserId),
-  ]);
+    .bind(coachUserId, clientUserId)
+    .run();
 
   return { ok: true };
 };
 
 export const createBodyCheckin = async (
   env: Env,
+  auth: AuthSession,
   userId: string,
-  actorUserId: string,
   payload: { recordedAt: string; weight: number; fat: number | null }
 ) => {
-  const targetUser = await env.DB.prepare(`SELECT id FROM users WHERE id = ? LIMIT 1`)
-    .bind(userId)
-    .first();
-
-  if (!targetUser) {
-    return fail(404, 'user_not_found', 'User not found.');
-  }
+  const targetUser = await requireManagedUserAccess(auth, env, userId);
+  if (targetUser instanceof Response) return targetUser;
 
   await env.DB.prepare(
     `
@@ -256,13 +316,13 @@ export const createBodyCheckin = async (
   )
     .bind(
       crypto.randomUUID(),
-      userId,
+      targetUser.id,
       payload.recordedAt,
       payload.weight,
       payload.fat,
-      actorUserId
+      auth.user.id
     )
     .run();
 
-  return getAdminUserDetail(env, userId);
+  return getManagedUserDetail(env, auth, targetUser.id);
 };

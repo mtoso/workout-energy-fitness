@@ -1,11 +1,4 @@
-import {
-  assignCoachToCustomer,
-  fail,
-  getAdminUserDetail,
-  json,
-  readJson,
-  requireAdmin,
-} from './_lib';
+import { assignCoachToClient, fail, getManagedUserDetail, json, readJson, requireAdmin } from './_lib';
 import type { Env } from './_lib';
 
 interface AssignCoachPayload {
@@ -24,17 +17,13 @@ export const onRequestPut: PagesFunction<Env> = async ({ request, env, params })
   const bodyOrResponse = await readJson<AssignCoachPayload>(request);
   if (bodyOrResponse instanceof Response) return bodyOrResponse;
 
-  const result = await assignCoachToCustomer(
+  const result = await assignCoachToClient(
     env,
     userId,
-    typeof bodyOrResponse.coachUserId === 'string'
-      ? bodyOrResponse.coachUserId.trim() || null
-      : null,
-    auth.user.id
+    typeof bodyOrResponse.coachUserId === 'string' ? bodyOrResponse.coachUserId.trim() || null : null
   );
-
   if (result instanceof Response) return result;
 
-  const detail = await getAdminUserDetail(env, userId);
-  return json(detail);
+  const detail = await getManagedUserDetail(env, auth, userId);
+  return detail instanceof Response ? detail : json(detail);
 };

@@ -322,12 +322,6 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
 };
 
 const clearWorkoutPlanStructure = async (env: Env, planId: string) => {
-  const weekIds = await env.DB.prepare(
-    `SELECT id FROM workout_weeks WHERE plan_id = ?`
-  )
-    .bind(planId)
-    .all<{ id: string }>();
-
   const dayIds = await env.DB.prepare(
     `SELECT id FROM workout_days WHERE plan_id = ?`
   )
@@ -354,18 +348,10 @@ const clearWorkoutPlanStructure = async (env: Env, planId: string) => {
     )
       .bind(...dayIdList)
       .run();
-
-    await env.DB.prepare(
-      `DELETE FROM workout_exercises WHERE day_id IN (${placeholders})`
-    )
-      .bind(...dayIdList)
-      .run();
   }
 
-  if (weekIds.results.length > 0) {
-    await env.DB.prepare(`DELETE FROM workout_days WHERE plan_id = ?`).bind(planId).run();
-    await env.DB.prepare(`DELETE FROM workout_weeks WHERE plan_id = ?`).bind(planId).run();
-  }
+  await env.DB.prepare(`DELETE FROM workout_days WHERE plan_id = ?`).bind(planId).run();
+  await env.DB.prepare(`DELETE FROM workout_weeks WHERE plan_id = ?`).bind(planId).run();
 };
 
 export const saveWorkoutPlanById = async (

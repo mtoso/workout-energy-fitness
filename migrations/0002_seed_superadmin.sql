@@ -1,9 +1,27 @@
--- Default bootstrap superadmin
+-- Default bootstrap admin
 -- Email: admin@example.com
 -- Password: ChangeMe123! (change immediately after first login)
 
-INSERT OR IGNORE INTO users (id, email, role, is_active)
-VALUES ('superadmin-seed', 'admin@example.com', 'admin', 1);
+INSERT OR IGNORE INTO users (
+  id,
+  email,
+  full_name,
+  user_type,
+  is_admin,
+  status,
+  activated_at,
+  last_login_at
+)
+VALUES (
+  'admin-seed',
+  'admin@example.com',
+  'EnergyFit Admin',
+  'coach',
+  1,
+  'active',
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP
+);
 
 INSERT OR IGNORE INTO user_identities (
   id,
@@ -14,8 +32,8 @@ INSERT OR IGNORE INTO user_identities (
   last_login_at
 )
 VALUES (
-  'superadmin-seed-email-identity',
-  'superadmin-seed',
+  'admin-seed-email-identity',
+  'admin-seed',
   'email',
   'admin@example.com',
   1,
@@ -24,6 +42,6 @@ VALUES (
 
 INSERT OR IGNORE INTO email_credentials (user_id, password_hash)
 VALUES (
-  'superadmin-seed',
+  'admin-seed',
   'argon2id$v=1$m=19456,t=3,p=1$DuUXJNFw5i41AsJrFupYnQ$jy_7zP2umFjcfPS2jI5nUvvI1SHiV9N4hzAy7h0t45s'
 );

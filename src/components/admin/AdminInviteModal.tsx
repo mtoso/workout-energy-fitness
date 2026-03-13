@@ -1,8 +1,9 @@
 import { Copy, Mail, UserPlus, X } from 'lucide-react';
 import type { AdminCoachSummary } from '../../types/admin';
+import type { UserType } from '../../types/auth';
 
 interface AdminInviteModalProps {
-  mode: 'customer' | 'coach';
+  userType: UserType;
   isOpen: boolean;
   fullName: string;
   email: string;
@@ -13,6 +14,7 @@ interface AdminInviteModalProps {
   isPending: boolean;
   coaches?: AdminCoachSummary[];
   onClose: () => void;
+  onUserTypeChange: (value: UserType) => void;
   onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onCoachUserIdChange: (value: string | null) => void;
@@ -21,7 +23,7 @@ interface AdminInviteModalProps {
 }
 
 export const AdminInviteModal = ({
-  mode,
+  userType,
   isOpen,
   fullName,
   email,
@@ -32,6 +34,7 @@ export const AdminInviteModal = ({
   isPending,
   coaches = [],
   onClose,
+  onUserTypeChange,
   onFullNameChange,
   onEmailChange,
   onCoachUserIdChange,
@@ -40,7 +43,7 @@ export const AdminInviteModal = ({
 }: AdminInviteModalProps) => {
   if (!isOpen) return null;
 
-  const isCoachInvite = mode === 'coach';
+  const isCoachUser = userType === 'coach';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -49,13 +52,13 @@ export const AdminInviteModal = ({
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full mb-3">
-              <UserPlus size={14} /> {isCoachInvite ? 'Invita coach' : 'Invita cliente'}
+              <UserPlus size={14} /> Nuovo utente
             </div>
             <h2 className="text-2xl font-bold text-zinc-900 tracking-tight">
-              {isCoachInvite ? 'Nuovo coach' : 'Nuovo cliente'}
+              Crea utente invitato
             </h2>
             <p className="text-zinc-500 mt-1">
-              Genera un link invite-only con i metadati necessari al profilo.
+              Il record utente viene creato subito in stato <span className="font-semibold">invited</span>.
             </p>
           </div>
           <button
@@ -69,13 +72,27 @@ export const AdminInviteModal = ({
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+              Tipo utente
+            </label>
+            <select
+              value={userType}
+              onChange={(event) => onUserTypeChange(event.target.value === 'coach' ? 'coach' : 'client')}
+              className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="client">Cliente</option>
+              <option value="coach">Coach</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
               Nome completo
             </label>
             <input
               type="text"
               value={fullName}
               onChange={(event) => onFullNameChange(event.target.value)}
-              placeholder={isCoachInvite ? 'Es. Anna Costa' : 'Es. Marco Rossi'}
+              placeholder={isCoachUser ? 'Es. Anna Costa' : 'Es. Marco Rossi'}
               className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -96,7 +113,7 @@ export const AdminInviteModal = ({
             </div>
           </div>
 
-          {!isCoachInvite && (
+          {!isCoachUser && (
             <div>
               <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Coach assegnato
@@ -118,7 +135,7 @@ export const AdminInviteModal = ({
 
           <div>
             <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-              Scadenza (ore)
+              Scadenza invito (ore)
             </label>
             <input
               type="number"
@@ -139,9 +156,7 @@ export const AdminInviteModal = ({
 
         {inviteUrl && (
           <div className="mt-5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-2xl px-4 py-4 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              Link generato
-            </p>
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Link generato</p>
             <p className="break-all text-sm font-medium text-zinc-900">{inviteUrl}</p>
             <button
               onClick={() => void navigator.clipboard.writeText(inviteUrl)}
@@ -164,7 +179,7 @@ export const AdminInviteModal = ({
             disabled={isPending}
             className="bg-emerald-500 text-zinc-950 px-6 py-3 rounded-2xl font-bold disabled:opacity-50 w-full sm:w-auto"
           >
-            {isPending ? 'Creazione...' : 'Crea invito'}
+            {isPending ? 'Creazione...' : 'Crea utente'}
           </button>
         </div>
       </div>

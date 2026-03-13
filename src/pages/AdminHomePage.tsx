@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Award, Calendar, FileText, Scale, Shield, Users } from 'lucide-react';
+import { ArrowRight, Calendar, FileText, Scale, Shield, Users } from 'lucide-react';
 import { AdminShell } from '../components/admin/AdminShell';
 import {
-  adminCoachesQueryOptions,
   adminUserDetailQueryOptions,
   adminUsersQueryOptions,
   meQueryOptions,
@@ -27,57 +26,52 @@ const formatDate = (value: string) => {
 
 export const AdminHomePage = () => {
   const { handleLogout } = useAdminLogout();
-  const usersQuery = useQuery(adminUsersQueryOptions());
-  const coachesQuery = useQuery(adminCoachesQueryOptions());
   const meQuery = useQuery(meQueryOptions());
+  const usersQuery = useQuery(adminUsersQueryOptions());
   const personalDetailQuery = useQuery({
     ...adminUserDetailQueryOptions(meQuery.data?.user.id ?? ''),
     enabled: Boolean(meQuery.data?.user.id),
   });
 
-  const users = usersQuery.data?.users ?? [];
-  const coaches = coachesQuery.data?.coaches ?? [];
-  const totalUsers = users.length;
-  const customerUsers = users.filter((user) => user.role === 'customer').length;
-  const assignedCustomers = users.filter((user) => user.role === 'customer' && user.coach).length;
+  const currentUser = meQuery.data?.user;
+  const visibleUsers = usersQuery.data?.users ?? [];
+  const visibleClients = visibleUsers.filter((user) => user.userType === 'client');
+  const visibleCoaches = visibleUsers.filter((user) => user.userType === 'coach');
+  const invitedUsers = visibleUsers.filter((user) => user.status === 'invited');
   const latestCheck = personalDetailQuery.data?.checkins[0] ?? null;
   const currentWorkout =
     personalDetailQuery.data?.workouts.find((workout) => workout.isCurrent) ?? null;
 
+  const title = currentUser?.isAdmin ? 'Dashboard Admin' : 'Dashboard Coach';
+  const subtitle = currentUser?.isAdmin
+    ? 'Gestisci coach, clienti invitati e schede personali dallo stesso workspace.'
+    : 'Gestisci i clienti assegnati e usa lo stesso account per la tua scheda personale.';
+
   return (
-    <AdminShell
-      section="dashboard"
-      title="Dashboard Admin"
-      subtitle="Panoramica rapida di clienti, coach e schede attive con dati reali del backoffice."
-      onLogout={handleLogout}
-    >
+    <AdminShell section="dashboard" title={title} subtitle={subtitle} onLogout={handleLogout}>
       <div className="grid xl:grid-cols-[minmax(0,1.3fr)_360px] gap-6">
         <div className="space-y-6">
           <div className="bg-zinc-950 text-white rounded-[2rem] p-6 md:p-7 shadow-xl shadow-zinc-900/10">
             <div className="inline-flex items-center gap-2 bg-zinc-900 text-amber-300 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em] mb-4">
-              <Shield size={14} /> Modalita Admin
+              <Shield size={14} /> {currentUser?.isAdmin ? 'Admin' : 'Coach'}
             </div>
-            <h2 className="text-3xl font-bold tracking-tight mb-2">Workspace coach e clienti</h2>
+            <h2 className="text-3xl font-bold tracking-tight mb-2">Workspace manager</h2>
             <p className="text-zinc-300 max-w-2xl">
-              Gestisci utenti, inviti, check-in fisici e versioni delle schede da un unico punto.
+              {currentUser?.isAdmin
+                ? 'Crea utenti invitati, assegna coach ai clienti e prepara schede anche prima del primo accesso.'
+                : 'Hai accesso ai clienti assegnati e alla tua scheda personale senza cambiare account.'}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/admin/users"
                 className="bg-emerald-400 text-zinc-950 px-4 py-3 rounded-2xl font-bold inline-flex items-center gap-2"
               >
-                <Users size={16} /> Apri lista clienti
+                <Users size={16} /> Apri lista utenti
               </Link>
-              <Link
-                to="/admin/coaches"
-                className="bg-white/10 text-white px-4 py-3 rounded-2xl font-semibold inline-flex items-center gap-2"
-              >
-                <Award size={16} /> Apri team coach
-              </Link>
-              {meQuery.data?.user && (
+              {currentUser && (
                 <Link
                   to="/admin/users/$userId/workout"
-                  params={{ userId: meQuery.data.user.id }}
+                  params={{ userId: currentUser.id }}
                   className="bg-white/10 text-white px-4 py-3 rounded-2xl font-semibold inline-flex items-center gap-2"
                 >
                   <FileText size={16} /> Vai alla mia scheda
@@ -89,61 +83,48 @@ export const AdminHomePage = () => {
           <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className={statCardClass}>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Utenti totali
+                Utenti visibili
               </p>
-              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{totalUsers}</p>
+              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{visibleUsers.length}</p>
             </div>
             <div className={statCardClass}>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Customer
+                Clienti
               </p>
-              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{customerUsers}</p>
+              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{visibleClients.length}</p>
             </div>
             <div className={statCardClass}>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Coach attivi
+                Coach visibili
               </p>
-              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{coaches.length}</p>
+              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{visibleCoaches.length}</p>
             </div>
             <div className={statCardClass}>
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                Clienti assegnati
+                Invitati
               </p>
-              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{assignedCustomers}</p>
+              <p className="text-3xl font-bold text-zinc-900 tracking-tight">{invitedUsers.length}</p>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-4">
+          <div className="grid lg:grid-cols-2 gap-4">
             <Link to="/admin/users" className={quickCardClass}>
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
                 <Users size={22} />
               </div>
-              <h3 className="text-xl font-bold text-zinc-900">Clienti e inviti</h3>
+              <h3 className="text-xl font-bold text-zinc-900">Utenti e inviti</h3>
               <p className="text-zinc-500 mt-2">
-                Cerca clienti, assegna coach e apri il loro storico completo di schede e pesate.
+                Cerca utenti per tipo, stato o coach assegnato e apri il loro workspace completo.
               </p>
               <span className="mt-6 inline-flex items-center gap-2 font-semibold text-zinc-900">
                 Vai alla lista <ArrowRight size={16} />
               </span>
             </Link>
 
-            <Link to="/admin/coaches" className={quickCardClass}>
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4">
-                <Award size={22} />
-              </div>
-              <h3 className="text-xl font-bold text-zinc-900">Team coach</h3>
-              <p className="text-zinc-500 mt-2">
-                Invita nuovi coach e controlla quanti clienti sono assegnati a ciascun profilo admin.
-              </p>
-              <span className="mt-6 inline-flex items-center gap-2 font-semibold text-zinc-900">
-                Apri team coach <ArrowRight size={16} />
-              </span>
-            </Link>
-
-            {meQuery.data?.user && (
+            {currentUser && (
               <Link
                 to="/admin/users/$userId/workout"
-                params={{ userId: meQuery.data.user.id }}
+                params={{ userId: currentUser.id }}
                 className={quickCardClass}
               >
                 <div className="w-12 h-12 rounded-2xl bg-zinc-900 text-white flex items-center justify-center mb-4">
@@ -151,7 +132,7 @@ export const AdminHomePage = () => {
                 </div>
                 <h3 className="text-xl font-bold text-zinc-900">Account personale</h3>
                 <p className="text-zinc-500 mt-2">
-                  Modifica la tua scheda e verifica l'esperienza cliente senza cambiare account.
+                  Modifica la tua scheda, controlla lo storico workout e verifica l’esperienza utente finale.
                 </p>
                 <span className="mt-6 inline-flex items-center gap-2 font-semibold text-zinc-900">
                   Apri la mia scheda <ArrowRight size={16} />
@@ -162,49 +143,11 @@ export const AdminHomePage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white border border-zinc-200 rounded-[2rem] p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                <Award size={20} />
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                  Team coach
-                </p>
-                <h3 className="text-xl font-bold text-zinc-900">Coach attivi</h3>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {coaches.length === 0 ? (
-                <div className="rounded-2xl bg-zinc-50 border border-zinc-100 px-4 py-5 text-sm text-zinc-500">
-                  Nessun coach disponibile.
-                </div>
-              ) : (
-                coaches.slice(0, 5).map((coach) => (
-                  <div
-                    key={coach.id}
-                    className="flex items-center justify-between gap-3 bg-zinc-50 border border-zinc-100 rounded-2xl px-4 py-3"
-                  >
-                    <div>
-                      <p className="font-bold text-zinc-900">{coach.fullName}</p>
-                      <p className="text-sm text-zinc-500">{coach.email}</p>
-                    </div>
-                    <div className="text-xs font-semibold px-3 py-1 rounded-full bg-white border border-zinc-200 text-zinc-600">
-                      {coach.assignedCustomerCount} clienti
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
           <div className="bg-white border border-zinc-200 rounded-[2rem] p-5 shadow-sm space-y-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Account personale
-              </p>
+              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Account personale</p>
               <h3 className="text-xl font-bold text-zinc-900 mt-1">
-                {meQuery.data?.user.email ?? 'Admin'}
+                {currentUser?.fullName ?? currentUser?.email ?? 'Manager'}
               </h3>
             </div>
 
@@ -237,28 +180,25 @@ export const AdminHomePage = () => {
 
             <div className="rounded-[1.5rem] bg-zinc-50 border border-zinc-100 p-4">
               <div className="flex items-center gap-2 text-zinc-500 text-sm mb-3">
-                <Calendar size={16} /> Storico schede recente
+                <Calendar size={16} /> Stato personale
               </div>
-              <div className="space-y-3">
-                {personalDetailQuery.isLoading ? (
-                  <p className="text-sm text-zinc-500">Caricamento storico...</p>
-                ) : personalDetailQuery.data?.workouts.length ? (
-                  personalDetailQuery.data.workouts.slice(0, 4).map((workout) => (
-                    <div key={workout.id} className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-zinc-900">{workout.name}</p>
-                        <p className="text-sm text-zinc-500">{formatDate(workout.updatedAt)}</p>
-                      </div>
-                      {workout.isCurrent ? (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold">
-                          Corrente
-                        </span>
-                      ) : null}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-zinc-500">Nessuna scheda disponibile.</p>
-                )}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span className="text-zinc-500">Tipo</span>
+                  <span className="font-semibold text-zinc-900">
+                    {currentUser?.isAdmin ? 'Admin' : currentUser?.userType === 'coach' ? 'Coach' : 'Cliente'}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-zinc-500">Stato</span>
+                  <span className="font-semibold text-zinc-900">{currentUser?.status ?? '-'}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-zinc-500">Area manager</span>
+                  <span className="font-semibold text-zinc-900">
+                    {currentUser?.canManageClients ? 'Abilitata' : 'No'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

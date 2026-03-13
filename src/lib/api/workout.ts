@@ -4,7 +4,7 @@ import type {
   AdminWorkoutPlanInput,
   AdminWorkoutPlanSummary,
 } from '../../types/admin-workout';
-import type { UserRole } from '../../types/auth';
+import type { UserType } from '../../types/auth';
 import type { WorkoutPlan } from '../../types/workout';
 import { apiFetch } from './client';
 
@@ -17,21 +17,18 @@ export const getAdminUsers = () =>
 export const getAdminCoaches = () =>
   apiFetch<{ coaches: AdminCoachSummary[] }>('/api/admin/coaches');
 
-export const createAdminInvite = (payload: {
+export const createAdminUser = (payload: {
   email: string;
-  role: UserRole;
   fullName?: string;
+  userType: UserType;
   coachUserId?: string | null;
   expiresInHours: number;
 }) =>
   apiFetch<{
+    user: AdminUserSummary;
     inviteUrl: string;
-    expiresAt: string;
-    role: UserRole;
-    email: string;
-    fullName: string | null;
-    coachUserId: string | null;
-  }>('/api/admin/invites', {
+    expiresAt: string | null;
+  }>('/api/admin/users', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -83,35 +80,3 @@ export const activateAdminWorkoutPlan = (userId: string, planId: string) =>
       method: 'POST',
     }
   );
-
-export const getAdminUserWorkoutPlan = (userId: string) =>
-  apiFetch<{ user: AdminUserSummary; plan: WorkoutPlan | null }>(
-    `/api/admin/users/${userId}/workout-plan`
-  );
-
-export const saveAdminUserWorkoutPlan = (userId: string, payload: WorkoutPlanInput) =>
-  apiFetch<{ user: AdminUserSummary; plan: WorkoutPlan | null }>(
-    `/api/admin/users/${userId}/workout-plan`,
-    {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }
-  );
-
-type WorkoutPlanInput = {
-  title: string;
-  days: Array<{
-    id?: number;
-    name: string;
-    focus: string;
-    exercises: Array<{
-      id?: string;
-      name: string;
-      sets: number;
-      reps: string;
-      rest: string;
-      trainerNote?: string;
-      previous?: { weight: string | number; reps: string | number; date: string };
-    }>;
-  }>;
-};

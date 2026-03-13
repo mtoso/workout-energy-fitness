@@ -35,7 +35,9 @@ const formatDate = (value: string) => {
   }).format(date);
 };
 
-const formatDateTime = (value: string) => {
+const formatDateTime = (value: string | null) => {
+  if (!value) return '-';
+
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
@@ -63,6 +65,10 @@ const getInitials = (fullName: string, email: string) =>
     .map((chunk) => chunk[0]?.toUpperCase() ?? '')
     .join('') || 'U';
 
+const userTypeLabel = (userType: 'client' | 'coach') => (userType === 'coach' ? 'Coach' : 'Cliente');
+const statusLabel = (status: 'invited' | 'active' | 'disabled') =>
+  status === 'invited' ? 'Invitato' : status === 'disabled' ? 'Disabilitato' : 'Attivo';
+
 export const AdminUserWorkoutPage = () => {
   const params = useParams({ from: '/admin/users/$userId/workout' });
   const userId = params.userId;
@@ -70,12 +76,13 @@ export const AdminUserWorkoutPage = () => {
 
   const meQuery = useQuery(meQueryOptions());
   const detailQuery = useQuery(adminUserDetailQueryOptions(userId));
-  const coachesQuery = useQuery(adminCoachesQueryOptions());
+  const isAdmin = meQuery.data?.user.isAdmin ?? false;
+  const coachesQuery = useQuery({
+    ...adminCoachesQueryOptions(),
+    enabled: isAdmin,
+  });
 
   const isPersonalView = meQuery.data?.user.id === userId;
-  const user = detailQuery.data?.user;
-  const backLink = user?.role === 'admin' && !isPersonalView ? '/admin/coaches' : '/admin/users';
-  const backLabel = user?.role === 'admin' && !isPersonalView ? 'Torna coach' : 'Torna clienti';
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -184,34 +191,44 @@ export const AdminUserWorkoutPage = () => {
     },
   });
 
+  const user = detailQuery.data?.user;
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
+  const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
+  const backLabel = isAdmin ? 'Torna utenti' : 'Torna clienti';
+
+  const title = isPersonalView
+    ? 'Le mie schede'
+    : user?.userType === 'coach'
+      ? 'Workspace coach'
+      : 'Workspace cliente';
+  const subtitle = user
+    ? isPersonalView
+      ? 'Gestisci la tua scheda personale, lo storico check-in e le versioni workout.'
+      : `Stai gestendo ${user.fullName} con storico schede, check-in e assegnazione coach.`
+    : 'Gestione completa del profilo selezionato.';
 
   return (
     <>
       <AdminShell
         section={isPersonalView ? 'personal' : 'editor'}
-        title={isPersonalView ? 'La mia scheda' : 'Workspace cliente'}
-        subtitle={
-          user
-            ? `Stai gestendo ${user.fullName} con storico schede, check-in e assegnazione coach.`
-            : 'Gestione completa del profilo selezionato.'
-        }
+        title={title}
+        subtitle={subtitle}
         onLogout={handleLogout}
         hideMobileNavigation
         actions={
           <Link
-            to={backLink}
+            to="/admin/users"
             className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto text-center"
           >
             {backLabel}
           </Link>
         }
       >
-        {detailQuery.isLoading || coachesQuery.isLoading ? (
+        {detailQuery.isLoading || (isAdmin && coachesQuery.isLoading) ? (
           <div className="bg-white border border-zinc-200 rounded-[2rem] p-10 text-center text-zinc-500">
             Caricamento workspace...
           </div>
-        ) : detailQuery.isError || coachesQuery.isError ? (
+        ) : detailQuery.isError || (isAdmin && coachesQuery.isError) ? (
           <div className="bg-red-100 border border-red-200 rounded-[2rem] p-10 text-center text-red-700">
             Errore nel caricamento del workspace utente.
           </div>
@@ -236,17 +253,24 @@ export const AdminUserWorkoutPage = () => {
                   <h2 className="text-xl font-bold text-zinc-900">{detailQuery.data.user.fullName}</h2>
                   <p className="text-zinc-500 text-sm mb-4">{detailQuery.data.user.email}</p>
                   <div className="flex justify-center gap-2 flex-wrap">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-zinc-100 text-zinc-700">
+                      {userTypeLabel(detailQuery.data.user.userType)}
+                    </span>
+                    {detailQuery.data.user.isAdmin ? (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
+                        Admin
+                      </span>
+                    ) : null}
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        detailQuery.data.user.role === 'admin'
-                          ? 'bg-amber-100 text-amber-900'
-                          : 'bg-zinc-100 text-zinc-700'
+                        detailQuery.data.user.status === 'active'
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : detailQuery.data.user.status === 'invited'
+                            ? 'bg-amber-50 text-amber-800'
+                            : 'bg-red-50 text-red-700'
                       }`}
                     >
-                      {detailQuery.data.user.role === 'admin' ? 'Coach / Admin' : 'Cliente'}
-                    </span>
-                    <span className="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
-                      {detailQuery.data.user.isActive ? 'Attivo' : 'Disabilitato'}
+                      {statusLabel(detailQuery.data.user.status)}
                     </span>
                   </div>
                 </div>
@@ -261,11 +285,19 @@ export const AdminUserWorkoutPage = () => {
                       </span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
-                      <span className="text-zinc-500">Ultima pesata</span>
+                      <span className="text-zinc-500">Ultimo login</span>
                       <span className="font-bold text-zinc-900 text-right">
-                        {latestCheck ? `${latestCheck.weight} kg` : '-'}
+                        {formatDateTime(detailQuery.data.user.lastLoginAt)}
                       </span>
                     </div>
+                    {detailQuery.data.user.status === 'invited' && (
+                      <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
+                        <span className="text-zinc-500">Scadenza invito</span>
+                        <span className="font-bold text-zinc-900 text-right">
+                          {formatDateTime(detailQuery.data.user.inviteExpiresAt)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center gap-3">
                       <span className="text-zinc-500">Scheda corrente</span>
                       <span className="font-bold text-zinc-900 text-right">
@@ -275,16 +307,14 @@ export const AdminUserWorkoutPage = () => {
                   </div>
                 </div>
 
-                {detailQuery.data.user.role === 'customer' && (
+                {canAssignCoach && (
                   <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
                     <div className="flex items-center gap-2 text-zinc-900 font-bold">
                       <Users size={18} /> Coach assegnato
                     </div>
                     <select
                       value={detailQuery.data.coach?.id ?? ''}
-                      onChange={(event) =>
-                        assignCoachMutation.mutate(event.target.value || null)
-                      }
+                      onChange={(event) => assignCoachMutation.mutate(event.target.value || null)}
                       disabled={assignCoachMutation.isPending}
                       className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
@@ -297,7 +327,8 @@ export const AdminUserWorkoutPage = () => {
                     </select>
                     {detailQuery.data.coach ? (
                       <p className="text-sm text-zinc-500">
-                        Attualmente assegnato a <span className="font-semibold text-zinc-900">{detailQuery.data.coach.fullName}</span>.
+                        Attualmente assegnato a{' '}
+                        <span className="font-semibold text-zinc-900">{detailQuery.data.coach.fullName}</span>.
                       </p>
                     ) : (
                       <p className="text-sm text-zinc-500">Nessun coach assegnato a questo cliente.</p>
@@ -331,16 +362,16 @@ export const AdminUserWorkoutPage = () => {
                   </div>
                   <div className={summaryCardClass}>
                     <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
-                      {detailQuery.data.user.role === 'admin' ? <Shield size={16} /> : <UserCircle size={16} />} 
-                      Ruolo account
+                      {detailQuery.data.user.isAdmin ? <Shield size={16} /> : <UserCircle size={16} />}
+                      Profilo
                     </div>
                     <p className="text-xl font-bold text-zinc-900 tracking-tight">
-                      {detailQuery.data.user.role === 'admin' ? 'Coach / Admin' : 'Cliente'}
+                      {detailQuery.data.user.isAdmin ? 'Admin' : userTypeLabel(detailQuery.data.user.userType)}
                     </p>
                     <p className="text-sm text-zinc-500 mt-2">
-                      {detailQuery.data.user.role === 'admin'
-                        ? 'Può usare l\'app e gestire altri profili.'
-                        : 'Profilo gestito dal backoffice.'}
+                      {detailQuery.data.user.userType === 'coach'
+                        ? 'Può gestire clienti assegnati e usare la propria app personale.'
+                        : 'Usa l’app personale e riceve le schede assegnate.'}
                     </p>
                   </div>
                 </div>
@@ -423,153 +454,135 @@ export const AdminUserWorkoutPage = () => {
                 </div>
 
                 <div className="bg-white rounded-[2rem] border border-zinc-200 shadow-sm p-5 md:p-6 space-y-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-zinc-900">Pesate e check-in</h3>
-                      <p className="text-zinc-500 mt-1">
-                        Storico peso e massa grassa collegato al profilo utente.
-                      </p>
+                      <h3 className="text-xl font-bold text-zinc-900">Check-in</h3>
+                      <p className="text-zinc-500 mt-1">Registra peso e massa grassa per tenere traccia dei progressi.</p>
                     </div>
                     <button
                       onClick={() => setIsAddWeightModalOpen(true)}
-                      className="bg-zinc-900 text-white px-4 py-2.5 rounded-2xl font-semibold inline-flex items-center justify-center gap-2 w-full md:w-auto"
+                      className="bg-zinc-900 text-white px-4 py-2.5 rounded-2xl font-semibold inline-flex items-center justify-center gap-2 w-full sm:w-auto"
                     >
-                      <Plus size={16} /> Nuova pesata
+                      <Plus size={16} /> Nuovo check-in
                     </button>
                   </div>
 
-                  <div className="rounded-[1.5rem] border border-zinc-200 overflow-hidden">
-                    <div className="hidden md:grid grid-cols-[160px_1fr_1fr] gap-4 px-5 py-4 bg-zinc-50 text-xs font-bold uppercase tracking-wider text-zinc-500 border-b border-zinc-200">
-                      <div>Data</div>
-                      <div className="text-right">Peso</div>
-                      <div className="text-right">Massa grassa</div>
-                    </div>
+                  <div className="space-y-3">
                     {detailQuery.data.checkins.length === 0 ? (
-                      <div className="px-5 py-8 text-center text-zinc-500">Nessuna pesata registrata.</div>
+                      <div className="rounded-2xl border border-dashed border-zinc-200 p-8 text-center text-zinc-500">
+                        Nessun check-in registrato.
+                      </div>
                     ) : (
                       detailQuery.data.checkins.map((checkin) => (
                         <div
                           key={checkin.id}
-                          className="grid md:grid-cols-[160px_1fr_1fr] gap-2 md:gap-4 px-5 py-4 border-b border-zinc-100 last:border-b-0 text-sm"
+                          className="rounded-2xl bg-zinc-50 border border-zinc-100 px-4 py-4 flex items-center justify-between gap-3"
                         >
-                          <div className="font-medium text-zinc-900">{formatDate(checkin.date)}</div>
-                          <div className="md:text-right text-zinc-700 font-semibold">{checkin.weight} kg</div>
-                          <div className="md:text-right text-zinc-500">
-                            {checkin.fat !== null ? `${checkin.fat}%` : '-'}
+                          <div>
+                            <p className="font-semibold text-zinc-900">{formatDate(checkin.date)}</p>
+                            <p className="text-sm text-zinc-500">
+                              {checkin.fat === null ? 'Senza massa grassa' : `MG ${checkin.fat}%`}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-zinc-900">{checkin.weight} kg</p>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
                 </div>
+
+                {effectiveSelectedPlanId ? (
+                  <AdminWorkoutPlanBuilder
+                    key={selectedPlanSummary?.id ?? 'new-plan'}
+                    plan={workoutPlanQuery.data?.plan ?? null}
+                    isSaving={saveMutation.isPending}
+                    saveError={saveError}
+                    saveOk={saveOk}
+                    onSave={(payload) => {
+                      setSaveOk(null);
+                      setSaveError(null);
+                      saveMutation.mutate({ planId: effectiveSelectedPlanId, payload });
+                    }}
+                  />
+                ) : null}
               </div>
             </div>
-
-            {workoutPlanQuery.isLoading ? (
-              <div className="bg-white border border-zinc-200 rounded-[2rem] p-10 text-center text-zinc-500">
-                Caricamento editor scheda...
-              </div>
-            ) : workoutPlanQuery.isError ? (
-              <div className="bg-red-100 border border-red-200 rounded-[2rem] p-10 text-center text-red-700">
-                Errore nel caricamento della scheda selezionata.
-              </div>
-            ) : workoutPlanQuery.data?.plan ? (
-              <AdminWorkoutPlanBuilder
-                key={`${userId}:${workoutPlanQuery.data.plan.id}`}
-                plan={workoutPlanQuery.data.plan}
-                isSaving={saveMutation.isPending}
-                saveError={saveError}
-                saveOk={saveOk}
-                onSave={(payload) => {
-                  setSaveError(null);
-                  setSaveOk(null);
-                  saveMutation.mutate({
-                    planId: workoutPlanQuery.data!.plan.id,
-                    payload,
-                  });
-                }}
-              />
-            ) : null}
           </div>
         )}
       </AdminShell>
 
       {isAddWeightModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
           <div
-            className="absolute inset-0 bg-zinc-950/25 backdrop-blur-sm"
+            className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm pointer-events-auto transition-opacity"
             onClick={() => setIsAddWeightModalOpen(false)}
           />
-          <div className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-[2rem] shadow-2xl border border-zinc-200 p-6 md:p-7">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl pointer-events-auto relative animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-zinc-900">Nuova pesata</h2>
+              <h2 className="text-xl font-bold text-zinc-900">Nuovo check-in</h2>
               <button
                 onClick={() => setIsAddWeightModalOpen(false)}
-                className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200 flex items-center justify-center"
+                className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition"
               >
                 <X size={18} />
               </button>
             </div>
-
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-                  Data
-                </label>
+                <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Data</label>
                 <input
                   type="date"
                   value={weightDate}
                   onChange={(event) => setWeightDate(event.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-medium text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-                    Peso (kg)
-                  </label>
+                  <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">Peso (Kg)</label>
                   <input
                     type="number"
                     step="0.1"
+                    placeholder="es. 85.5"
                     value={weightValue}
                     onChange={(event) => setWeightValue(event.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-medium text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-                    Massa grassa %
+                    Grasso % <span className="font-normal normal-case text-zinc-400">(Opz.)</span>
                   </label>
                   <input
                     type="number"
                     step="0.1"
+                    placeholder="es. 15.2"
                     value={fatValue}
                     onChange={(event) => setFatValue(event.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2.5 font-medium text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
                   />
                 </div>
               </div>
             </div>
-
-            <div className="mt-8 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            <div className="flex justify-end gap-3 mt-8">
               <button
                 onClick={() => setIsAddWeightModalOpen(false)}
-                className="px-5 py-3 rounded-2xl font-semibold text-zinc-600 hover:bg-zinc-100 w-full sm:w-auto"
+                className="px-5 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-100 transition w-full sm:w-auto"
               >
                 Annulla
               </button>
               <button
-                onClick={() =>
-                  createCheckinMutation.mutate({
-                    recordedAt: weightDate,
-                    weight: Number(weightValue),
-                    fat: fatValue ? Number(fatValue) : null,
-                  })
-                }
-                disabled={createCheckinMutation.isPending}
-                className="bg-emerald-500 text-zinc-950 px-6 py-3 rounded-2xl font-bold disabled:opacity-50 w-full sm:w-auto"
+                onClick={() => {
+                  const weight = Number(weightValue);
+                  const fat = fatValue ? Number(fatValue) : null;
+                  createCheckinMutation.mutate({ recordedAt: weightDate, weight, fat });
+                }}
+                disabled={createCheckinMutation.isPending || !weightValue}
+                className="w-full sm:w-auto bg-emerald-500 text-zinc-950 px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:hover:bg-emerald-500 flex items-center justify-center gap-2"
               >
-                {createCheckinMutation.isPending ? 'Salvataggio...' : 'Salva pesata'}
+                Salva check-in
               </button>
             </div>
           </div>

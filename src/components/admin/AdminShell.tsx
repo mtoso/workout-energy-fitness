@@ -1,17 +1,10 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import {
-  Award,
-  Dumbbell,
-  FileText,
-  Home,
-  LogOut,
-  Users,
-} from 'lucide-react';
+import { Dumbbell, FileText, Home, LogOut, Users } from 'lucide-react';
 import { meQueryOptions } from '../../lib/api/query-options';
 
-export type AdminSection = 'dashboard' | 'clients' | 'coaches' | 'personal' | 'editor';
+export type AdminSection = 'dashboard' | 'users' | 'personal' | 'editor';
 
 interface AdminShellProps {
   section: AdminSection;
@@ -32,14 +25,18 @@ interface NavItem {
   disabled?: boolean;
 }
 
-const getInitials = (email: string) =>
-  email
-    .split('@')[0]
-    .split(/[._-]/)
+const getInitials = (fullName: string, email: string) =>
+  (fullName || email)
+    .split(/\s+|[._-]/)
     .filter(Boolean)
     .slice(0, 2)
     .map((chunk) => chunk[0]?.toUpperCase() ?? '')
-    .join('') || 'AD';
+    .join('') || 'EF';
+
+const getUserLabel = (isAdmin: boolean, userType: 'client' | 'coach') => {
+  if (isAdmin) return 'Admin';
+  return userType === 'coach' ? 'Coach' : 'Cliente';
+};
 
 export const AdminShell = ({
   section,
@@ -65,21 +62,12 @@ export const AdminShell = ({
       },
     },
     {
-      id: 'clients',
-      label: 'Clienti',
-      shortLabel: 'CLIENTI',
+      id: 'users',
+      label: 'Utenti',
+      shortLabel: 'UTENTI',
       icon: Users,
       onClick: () => {
         void navigate({ to: '/admin/users' });
-      },
-    },
-    {
-      id: 'coaches',
-      label: 'Coach',
-      shortLabel: 'COACH',
-      icon: Award,
-      onClick: () => {
-        void navigate({ to: '/admin/coaches' });
       },
     },
     {
@@ -99,7 +87,7 @@ export const AdminShell = ({
   ];
 
   const isItemActive = (item: NavItem) =>
-    section === item.id || (section === 'editor' && (item.id === 'clients' || item.id === 'personal'));
+    section === item.id || (section === 'editor' && (item.id === 'users' || item.id === 'personal'));
 
   return (
     <div className="min-h-[100dvh] bg-zinc-100 md:flex">
@@ -146,13 +134,15 @@ export const AdminShell = ({
           </button>
           <div className="flex items-center gap-3 px-2">
             <div className="w-11 h-11 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold">
-              {getInitials(currentUser?.email ?? 'admin')}
+              {getInitials(currentUser?.fullName ?? '', currentUser?.email ?? 'admin')}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-white truncate">
-                {currentUser?.email ?? 'Admin'}
+                {currentUser?.fullName ?? currentUser?.email ?? 'Manager'}
               </p>
-              <p className="text-xs text-zinc-500">Ruolo: {currentUser?.role ?? 'admin'}</p>
+              <p className="text-xs text-zinc-500">
+                {currentUser ? `${getUserLabel(currentUser.isAdmin, currentUser.userType)} • ${currentUser.status}` : 'Sessione'}
+              </p>
             </div>
           </div>
         </div>

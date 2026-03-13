@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
+import type { AuthUser } from '../types/auth';
 import { signupEmail, signupGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
 import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
@@ -27,16 +28,16 @@ export const AcceptInvitePage = () => {
     ? 'Google signup non configurato (VITE_GOOGLE_CLIENT_ID mancante).'
     : null;
 
-  const handleSuccess = async (role: 'admin' | 'customer') => {
+  const handleSuccess = async (user: AuthUser) => {
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-    await navigate({ to: role === 'admin' ? '/admin' : '/' });
+    await navigate({ to: user.canManageClients ? '/admin' : '/' });
   };
 
   const emailMutation = useMutation({
     mutationFn: signupEmail,
     onSuccess: (data) => {
-      void handleSuccess(data.user.role);
+      void handleSuccess(data.user);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Signup email fallito.');
@@ -46,7 +47,7 @@ export const AcceptInvitePage = () => {
   const googleMutation = useMutation({
     mutationFn: signupGoogle,
     onSuccess: (data) => {
-      void handleSuccess(data.user.role);
+      void handleSuccess(data.user);
     },
     onError: (err) => {
       setError(isApiError(err) ? err.message : 'Signup Google fallito.');
@@ -64,9 +65,7 @@ export const AcceptInvitePage = () => {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
 
-    if (!inviteToken) return;
-
-    if (!googleClientId) return;
+    if (!inviteToken || !googleClientId) return;
 
     const container = googleButtonRef.current;
     if (!container) return;
@@ -100,7 +99,7 @@ export const AcceptInvitePage = () => {
         <div className="bg-white border border-zinc-200 rounded-2xl p-6 max-w-md w-full text-center">
           <h1 className="text-xl font-bold text-zinc-900 mb-2">Invito mancante</h1>
           <p className="text-zinc-500 text-sm mb-4">
-            Apri questa pagina usando il link d'invito completo ricevuto dall'admin.
+            Apri questa pagina usando il link d'invito completo ricevuto dal backoffice.
           </p>
           <Link to="/login" className="text-zinc-900 underline font-semibold">
             Torna al login
@@ -115,7 +114,7 @@ export const AcceptInvitePage = () => {
       <div className="max-w-xl mx-auto space-y-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-zinc-900">Completa registrazione</h1>
-          <p className="text-zinc-500 mt-2">Invite-only: usa il canale che preferisci</p>
+          <p className="text-zinc-500 mt-2">Attiva il tuo account con il canale che preferisci</p>
         </div>
 
         {error && (
@@ -144,11 +143,7 @@ export const AcceptInvitePage = () => {
             className="w-full bg-zinc-900 text-white rounded-xl py-2.5 font-semibold disabled:opacity-50"
             onClick={() => {
               setError(null);
-              emailMutation.mutate({
-                inviteToken,
-                email,
-                password,
-              });
+              emailMutation.mutate({ inviteToken, email, password });
             }}
             disabled={emailMutation.isPending}
           >
@@ -159,14 +154,11 @@ export const AcceptInvitePage = () => {
         <div className={cardClass}>
           <h2 className="font-semibold text-zinc-900">Signup con Google</h2>
           <p className="text-sm text-zinc-500">
-            Registrazione con Google Identity Services. Supportata per account
-            Gmail o Google Workspace gestiti.
+            Registrazione con Google Identity Services. Supportata per account Gmail o Google Workspace gestiti.
           </p>
           <div ref={googleButtonRef} className="min-h-12" />
           {(googleConfigError || googleSetupError) && (
-            <p className="text-sm text-red-700">
-              {googleConfigError || googleSetupError}
-            </p>
+            <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
           )}
           {googleMutation.isPending && (
             <p className="text-sm text-zinc-500">Registrazione Google in corso...</p>

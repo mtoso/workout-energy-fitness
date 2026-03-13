@@ -1,8 +1,8 @@
 import { issueSession } from '../../_lib/auth';
-import { normalizeEmail, readJson } from '../../_lib/http';
+import { readJson } from '../../_lib/http';
 import { verifyGoogleToken } from '../../_lib/id-token';
 import { fail, json } from '../../_lib/response';
-import { createUserFromInvite, findInviteByToken } from '../../_lib/users';
+import { activateInvitedUser, findInvitedUserByToken, getAuthUserById } from '../../_lib/users';
 import type { Env } from '../../_lib/types';
 
 interface GoogleSignupPayload {
@@ -19,8 +19,8 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
     return fail(400, 'invalid_invite', 'Invite token is required.');
   }
 
-  const invite = await findInviteByToken(env, inviteToken);
-  if (!invite) {
+  const invitedUser = await findInvitedUserByToken(env, inviteToken);
+  if (!invitedUser) {
     return fail(400, 'invalid_invite', 'Invite is invalid, expired, or already used.');
   }
 
@@ -28,13 +28,8 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
   if (identityOrResponse instanceof Response) return identityOrResponse;
 
   const googleIdentity = identityOrResponse;
-
   if (!googleIdentity.email || !googleIdentity.emailVerified) {
-    return fail(
-      400,
-      'invalid_token',
-      'google token must include a verified email for invite signup.'
-    );
+    return fail(400, 'invalid_token', 'Google token must include a verified email for invite signup.');
   }
 
   if (!googleIdentity.isAuthoritativeEmail) {
@@ -45,34 +40,19 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
     );
   }
 
-  const inviteEmail = normalizeEmail(invite.email);
-  const tokenEmail = normalizeEmail(googleIdentity.email);
-
-  if (inviteEmail !== tokenEmail) {
-    return fail(400, 'email_mismatch', 'Invite email does not match provider email.');
-  }
-
-  const createResult = await createUserFromInvite(env, invite, tokenEmail, {
+  const activated = await activateInvitedUser(env, invitedUser, googleIdentity.email, {
     provider: 'google',
     providerSubject: googleIdentity.googleSubject,
     emailVerified: googleIdentity.emailVerified,
   });
 
-  if (createResult instanceof Response) return createResult;
+  if (activated instanceof Response) return activated;
 
-  const { cookieHeader } = await issueSession(request, env, createResult.userId);
+  const user = await getAuthUserById(env, activated.userId);
+  if (!user) {
+    return fail(500, 'user_not_found', 'Unable to load account.');
+  }
 
-  return json(
-    {
-      user: {
-        id: createResult.userId,
-        email: tokenEmail,
-        role: invite.role,
-      },
-    },
-    201,
-    {
-      'set-cookie': cookieHeader,
-    }
-  );
+  const { cookieHeader } = await issueSession(request, env, activated.userId);
+  return json({ user }, 201, { 'set-cookie': cookieHeader });
 };

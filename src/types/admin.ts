@@ -1,20 +1,26 @@
-import type { UserRole } from './auth';
+import type { UserStatus, UserType } from './auth';
 import type { AdminWorkoutPlanSummary } from './admin-workout';
 
 export interface AdminCoachSummary {
   id: string;
   email: string;
   fullName: string;
-  assignedCustomerCount: number;
+  isAdmin: boolean;
+  status: UserStatus;
+  assignedClientCount: number;
 }
 
 export interface AdminUserSummary {
   id: string;
   email: string;
-  role: UserRole;
-  isActive: boolean;
-  createdAt: string;
   fullName: string;
+  userType: UserType;
+  isAdmin: boolean;
+  status: UserStatus;
+  createdAt: string;
+  activatedAt: string | null;
+  lastLoginAt: string | null;
+  inviteExpiresAt: string | null;
   coach: AdminCoachSummary | null;
 }
 

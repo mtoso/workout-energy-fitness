@@ -1,4 +1,4 @@
-export { requireAdmin } from '../../../../_lib/guards';
+export { requireManager, requireManagedUserAccess } from '../../../../_lib/guards';
 export { readJson } from '../../../../_lib/http';
 export {
   activateWorkoutPlanForUser,

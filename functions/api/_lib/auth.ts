@@ -1,5 +1,6 @@
 import { randomToken, sha256Hex } from './crypto';
-import type { AuthSession, Env } from './types';
+import { displayNameFromEmail } from './names';
+import type { AuthSession, AuthUser, Env, UserRow } from './types';
 
 const DEFAULT_SESSION_COOKIE_NAME = 'wef_session';
 const DEFAULT_SESSION_TTL_HOURS = 24 * 30;
@@ -17,6 +18,17 @@ const parseCookieValue = (request: Request, name: string) => {
 
   return null;
 };
+
+export const toAuthUser = (row: Pick<UserRow, 'id' | 'email' | 'full_name' | 'user_type' | 'is_admin' | 'status' | 'coach_user_id'>): AuthUser => ({
+  id: row.id,
+  email: row.email,
+  fullName: row.full_name?.trim() || displayNameFromEmail(row.email),
+  userType: row.user_type,
+  isAdmin: Boolean(row.is_admin),
+  status: row.status,
+  coachUserId: row.coach_user_id,
+  canManageClients: Boolean(row.is_admin) || row.user_type === 'coach',
+});
 
 export const getSessionCookieName = (env: Env) =>
   env.SESSION_COOKIE_NAME || DEFAULT_SESSION_COOKIE_NAME;
@@ -81,25 +93,33 @@ export const getAuthSession = async (
   const row = await env.DB.prepare(
     `
       SELECT
-        s.id as session_id,
-        u.id as user_id,
-        u.email as email,
-        u.role as role
+        s.id AS session_id,
+        u.id,
+        u.email,
+        u.full_name,
+        u.user_type,
+        u.is_admin,
+        u.status,
+        u.coach_user_id
       FROM sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ?
         AND s.revoked_at IS NULL
         AND datetime(s.expires_at) > CURRENT_TIMESTAMP
-        AND u.is_active = 1
+        AND u.status = 'active'
       LIMIT 1
     `
   )
     .bind(tokenHash)
     .first<{
       session_id: string;
-      user_id: string;
+      id: string;
       email: string;
-      role: 'admin' | 'customer';
+      full_name: string | null;
+      user_type: 'client' | 'coach';
+      is_admin: number;
+      status: 'active';
+      coach_user_id: string | null;
     }>();
 
   if (!row) return null;
@@ -107,11 +127,7 @@ export const getAuthSession = async (
   return {
     sessionId: row.session_id,
     tokenHash,
-    user: {
-      id: row.user_id,
-      email: row.email,
-      role: row.role,
-    },
+    user: toAuthUser(row),
   };
 };
 

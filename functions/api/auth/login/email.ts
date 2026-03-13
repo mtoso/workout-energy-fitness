@@ -1,8 +1,8 @@
 import { issueSession } from '../../_lib/auth';
-import { readJson, normalizeEmail } from '../../_lib/http';
-import { fail, json } from '../../_lib/response';
 import { verifyPassword } from '../../_lib/crypto';
-import { touchIdentityLogin } from '../../_lib/users';
+import { normalizeEmail, readJson } from '../../_lib/http';
+import { fail, json } from '../../_lib/response';
+import { getAuthUserById, touchIdentityLogin } from '../../_lib/users';
 import type { Env } from '../../_lib/types';
 
 interface LoginEmailPayload {
@@ -24,11 +24,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const account = await env.DB.prepare(
     `
       SELECT
-        u.id as id,
-        u.email as email,
-        u.role as role,
-        u.is_active as is_active,
-        c.password_hash as password_hash
+        u.id,
+        u.email,
+        u.status,
+        c.password_hash
       FROM users u
       JOIN email_credentials c ON c.user_id = u.id
       WHERE u.email = ?
@@ -39,8 +38,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     .first<{
       id: string;
       email: string;
-      role: 'admin' | 'customer';
-      is_active: number;
+      status: 'invited' | 'active' | 'disabled';
       password_hash: string;
     }>();
 
@@ -48,22 +46,25 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return fail(401, 'invalid_credentials', 'Invalid email or password.');
   }
 
-  if (!account.is_active) {
+  if (account.status === 'invited') {
+    return fail(403, 'account_not_activated', 'Complete invite activation before logging in.');
+  }
+
+  if (account.status === 'disabled') {
     return fail(403, 'account_disabled', 'Account is disabled.');
   }
 
-  await touchIdentityLogin(env, 'email', account.email);
+  await touchIdentityLogin(env, 'email', account.email, account.id);
+
+  const user = await getAuthUserById(env, account.id);
+  if (!user) {
+    return fail(500, 'user_not_found', 'Unable to load account.');
+  }
 
   const { cookieHeader } = await issueSession(request, env, account.id);
 
   return json(
-    {
-      user: {
-        id: account.id,
-        email: account.email,
-        role: account.role,
-      },
-    },
+    { user },
     200,
     {
       'set-cookie': cookieHeader,
