@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { AuthUser } from '../types/auth';
+import defaultProfileLogo from '../assets/profile-default-logo.png';
 import { loginEmail, loginGoogle } from '../lib/api/auth';
 import { isApiError } from '../lib/api/client';
 import { mountGoogleSignInButton } from '../lib/auth/oauth-sdk';
@@ -68,7 +69,7 @@ export const LoginPage = () => {
     void mountGoogleSignInButton({
       container,
       clientId: googleClientId,
-      buttonText: 'signin_with',
+      buttonText: 'continue_with',
       flow: 'signin',
       locale: 'it',
       width: Math.min(container.clientWidth || 360, 480),
@@ -95,12 +96,9 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-zinc-100 px-4 py-8 md:py-12">
       <div className="max-w-lg mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[1.75rem] bg-white border border-zinc-200 shadow-sm mb-4">
-            <img src="/favicon.svg" alt="EnergyFit" className="w-11 h-11" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-[1.75rem] bg-white border border-zinc-200 shadow-sm mb-5 overflow-hidden">
+            <img src={defaultProfileLogo} alt="EnergyFit" className="w-full h-full object-cover" />
           </div>
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-zinc-500 mb-2">
-            EnergyFit Pro
-          </p>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900">Accedi</h1>
         </div>
 
@@ -126,7 +124,7 @@ export const LoginPage = () => {
             onChange={(event) => setPassword(event.target.value)}
           />
           <button
-            className="w-full bg-zinc-900 text-white rounded-2xl py-4 font-semibold text-lg disabled:opacity-50"
+            className="w-full bg-zinc-900 text-white rounded-full h-[44px] font-semibold text-base disabled:opacity-50"
             onClick={() => {
               setError(null);
               emailMutation.mutate({ email, password });
@@ -136,7 +134,7 @@ export const LoginPage = () => {
             {emailMutation.isPending ? 'Accesso...' : 'Accedi con Email'}
           </button>
           <div className="pt-1">
-            <div ref={googleButtonRef} className="min-h-12 w-full flex justify-center" />
+            <div ref={googleButtonRef} className="min-h-[44px] w-full" />
           </div>
           {(googleConfigError || googleSetupError) && (
             <p className="text-sm text-red-700">{googleConfigError || googleSetupError}</p>
