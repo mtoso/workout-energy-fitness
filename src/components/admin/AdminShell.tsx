@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Dumbbell, FileText, LogOut, Users } from 'lucide-react';
+import { FileText, LogOut, Users } from 'lucide-react';
+import defaultProfileLogo from '../../assets/profile-default-logo.png';
 import { meQueryOptions } from '../../lib/api/query-options';
 
 export type AdminSection = 'users' | 'personal';
@@ -14,6 +15,8 @@ interface AdminShellProps {
   onLogout: () => void;
   children: ReactNode;
   hideMobileNavigation?: boolean;
+  hideHeader?: boolean;
+  contentClassName?: string;
 }
 
 interface NavItem {
@@ -52,6 +55,8 @@ export const AdminShell = ({
   onLogout,
   children,
   hideMobileNavigation = false,
+  hideHeader = false,
+  contentClassName,
 }: AdminShellProps) => {
   const navigate = useNavigate();
   const meQuery = useQuery(meQueryOptions());
@@ -87,20 +92,24 @@ export const AdminShell = ({
 
   return (
     <div className="min-h-[100dvh] bg-zinc-100 md:flex">
-      <aside className="hidden md:flex w-72 shrink-0 bg-zinc-950 text-zinc-400 flex-col z-10 relative shadow-2xl md:shadow-none">
-        <div className="p-6 flex items-center gap-3 border-b border-zinc-800">
-          <div className="w-10 h-10 bg-emerald-400 rounded-2xl flex items-center justify-center text-zinc-950">
-            <Dumbbell size={20} />
+      <aside className="hidden md:flex w-[320px] shrink-0 bg-zinc-950 text-zinc-400 flex-col z-10 relative shadow-2xl md:shadow-none">
+        <div className="p-8 flex items-center gap-4 border-b border-zinc-800">
+          <div className="w-14 h-14 rounded-2xl bg-white overflow-hidden shadow-sm shrink-0">
+            <img
+              src={defaultProfileLogo}
+              alt="EnergyFit"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
               Backoffice
             </p>
-            <p className="text-white font-bold text-xl tracking-tight">EnergyFit Pro</p>
+            <p className="text-white font-bold text-[2rem] tracking-tight leading-none">EnergyFit Pro</p>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-6 py-8 space-y-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isItemActive(item);
@@ -110,21 +119,21 @@ export const AdminShell = ({
                 key={item.id}
                 onClick={item.onClick}
                 disabled={item.disabled}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition text-left ${
+                className={`w-full flex items-center gap-4 px-6 py-5 rounded-[1.75rem] transition text-left text-xl ${
                   isActive ? 'bg-zinc-900 text-white' : 'hover:bg-zinc-900 hover:text-white'
                 } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Icon size={18} />
+                <Icon size={22} />
                 <span className="font-semibold">{item.label}</span>
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-zinc-800">
+        <div className="p-6 border-t border-zinc-800">
           <button
             onClick={onLogout}
-            className="w-full mb-4 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-2xl font-semibold transition"
+            className="w-full mb-5 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-4 rounded-2xl font-semibold transition"
           >
             <LogOut size={16} /> Esci
           </button>
@@ -149,11 +158,20 @@ export const AdminShell = ({
       <main className="flex-1 min-w-0">
         <div className="md:hidden sticky top-0 z-30 bg-zinc-950 text-white px-4 py-4 border-b border-zinc-800 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 font-semibold">
-                Backoffice
-              </p>
-              <h1 className="text-lg font-bold tracking-tight truncate">EnergyFit Pro</h1>
+            <div className="min-w-0 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shadow-sm shrink-0">
+                <img
+                  src={defaultProfileLogo}
+                  alt="EnergyFit"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 font-semibold">
+                  Backoffice
+                </p>
+                <h1 className="text-lg font-bold tracking-tight truncate">EnergyFit Pro</h1>
+              </div>
             </div>
             <button
               onClick={onLogout}
@@ -167,25 +185,21 @@ export const AdminShell = ({
         <div
           className={`px-4 md:px-8 py-6 md:py-8 space-y-6 ${
             hideMobileNavigation ? '' : 'pb-[96px] md:pb-8'
-          }`}
+          } ${contentClassName ?? ''}`}
         >
-          <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight">{title}</h1>
-              {subtitle && <p className="text-sm md:text-base text-zinc-500 mt-1">{subtitle}</p>}
-            </div>
-            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              <button
-                onClick={() => {
-                  void navigate({ to: '/' });
-                }}
-                className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto"
-              >
-                App utente
-              </button>
-              {actions}
-            </div>
-          </header>
+          {!hideHeader ? (
+            <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight">{title}</h1>
+                {subtitle && <p className="text-sm md:text-base text-zinc-500 mt-1">{subtitle}</p>}
+              </div>
+              {actions ? (
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                  {actions}
+                </div>
+              ) : null}
+            </header>
+          ) : null}
 
           {children}
         </div>

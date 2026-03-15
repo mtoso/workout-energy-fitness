@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { FileText, Plus, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
+import { ChevronLeft, FileText, Plus, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
 import { AdminShell } from '../components/admin/AdminShell';
 import { isApiError } from '../lib/api/client';
 import {
@@ -159,16 +159,6 @@ export const AdminUserDetailPage = () => {
         title={title}
         subtitle={subtitle}
         onLogout={handleLogout}
-        actions={
-          !isPersonalView ? (
-            <Link
-              to="/admin/users"
-              className="bg-white border border-zinc-200 text-zinc-700 px-4 py-2.5 rounded-2xl font-semibold w-full sm:w-auto text-center"
-            >
-              Torna utenti
-            </Link>
-          ) : undefined
-        }
       >
         {detailQuery.isLoading || (isAdmin && coachesQuery.isLoading) ? (
           <div className="bg-white border border-zinc-200 rounded-[2rem] p-10 text-center text-zinc-500">
@@ -184,6 +174,18 @@ export const AdminUserDetailPage = () => {
           </div>
         ) : (
           <div className="space-y-6">
+            {!isPersonalView ? (
+              <div>
+                <Link
+                  to="/admin/users"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600 hover:text-zinc-900"
+                >
+                  <ChevronLeft size={16} />
+                  Torna utenti
+                </Link>
+              </div>
+            ) : null}
+
             {generalError && (
               <div className="rounded-2xl px-4 py-3 text-sm font-medium bg-red-100 text-red-700 border border-red-200">
                 {generalError}
