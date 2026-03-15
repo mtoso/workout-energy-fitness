@@ -1,10 +1,14 @@
 import { fail } from './response';
 import type { Env } from './types';
 
+type WorkoutLoadUnit = 'kg' | 'lb';
+
 export interface AdminWorkoutItemInput {
   id?: string;
   name: string;
   reps: string;
+  targetLoad?: string;
+  targetLoadUnit?: WorkoutLoadUnit;
   previous?: {
     weight: string | number;
     reps: string | number;
@@ -52,6 +56,9 @@ const parseNullable = (value: unknown) => {
   const asString = String(value).trim();
   return asString ? asString : null;
 };
+
+const normalizeLoadUnit = (value: unknown): WorkoutLoadUnit =>
+  value === 'lb' ? 'lb' : 'kg';
 
 const formatDateLabel = (isoValue: string) => {
   const date = new Date(isoValue);
@@ -172,6 +179,14 @@ export const validateAdminWorkoutPlanInput = (
               `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}, esercizio ${itemIndex + 1}: nome e ripetizioni sono obbligatori.`
             );
           }
+
+          if (item.targetLoadUnit && item.targetLoadUnit !== 'kg' && item.targetLoadUnit !== 'lb') {
+            return fail(
+              400,
+              'invalid_payload',
+              `Settimana ${weekIndex + 1}, giorno ${dayIndex + 1}, gruppo ${groupIndex + 1}, esercizio ${itemIndex + 1}: l'unità del peso deve essere kg o lb.`
+            );
+          }
         }
       }
     }
@@ -254,7 +269,7 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
             groups.results.map(async (group) => {
               const items = await env.DB.prepare(
                 `
-                  SELECT id, item_order, name, reps, previous_weight, previous_reps, previous_date
+                  SELECT id, item_order, name, reps, target_load, target_load_unit, previous_weight, previous_reps, previous_date
                   FROM workout_exercise_group_items
                   WHERE group_id = ?
                   ORDER BY item_order ASC
@@ -266,6 +281,8 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
                   item_order: number;
                   name: string;
                   reps: string;
+                  target_load: string | null;
+                  target_load_unit: WorkoutLoadUnit | null;
                   previous_weight: string | null;
                   previous_reps: string | null;
                   previous_date: string | null;
@@ -281,6 +298,8 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
                   id: item.id,
                   name: item.name,
                   reps: item.reps,
+                  targetLoad: item.target_load ?? '',
+                  targetLoadUnit: normalizeLoadUnit(item.target_load_unit),
                   previous:
                     item.previous_weight || item.previous_reps || item.previous_date
                       ? {
@@ -445,11 +464,13 @@ export const saveWorkoutPlanById = async (
                 item_order,
                 name,
                 reps,
+                target_load,
+                target_load_unit,
                 previous_weight,
                 previous_reps,
                 previous_date
               )
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
           )
             .bind(
@@ -458,6 +479,8 @@ export const saveWorkoutPlanById = async (
               itemIndex + 1,
               item.name.trim(),
               item.reps.trim(),
+              parseNullable(item.targetLoad),
+              normalizeLoadUnit(item.targetLoadUnit),
               parseNullable(item.previous?.weight),
               parseNullable(item.previous?.reps),
               parseNullable(item.previous?.date)
@@ -512,7 +535,7 @@ export const createWorkoutPlanForUser = async (
                 sets: 3,
                 rest: "1'30\"",
                 notes: '',
-                items: [{ name: 'Nuovo esercizio', reps: '10' }],
+                items: [{ name: 'Nuovo esercizio', reps: '10', targetLoad: '', targetLoadUnit: 'kg' }],
               },
             ],
           },
@@ -610,6 +633,8 @@ export const getCurrentFlattenedWorkoutPlanForUser = async (env: Env, userId: st
             sets: group.sets,
             reps: singleItem?.reps ?? '',
             rest: group.rest,
+            targetLoad: singleItem?.targetLoad,
+            targetLoadUnit: singleItem?.targetLoadUnit,
             trainerNote: group.notes || undefined,
             previous: singleItem?.previous,
           };

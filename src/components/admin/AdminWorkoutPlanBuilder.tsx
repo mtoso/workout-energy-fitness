@@ -180,7 +180,10 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
   const handleAddSupersetItem = (groupId: string) => {
     handleUpdateGroup(groupId, (group) => ({
       ...group,
-      items: [...group.items, { id: createId(), name: '', reps: '10' }],
+      items: [
+        ...group.items,
+        { id: createId(), name: '', reps: '10', targetLoad: '', targetLoadUnit: 'kg' },
+      ],
     }));
   };
 
@@ -371,11 +374,12 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
             </div>
           </div>
 
-          <div className="hidden xl:grid xl:grid-cols-[96px_minmax(260px,1.5fr)_120px_170px_130px_minmax(120px,0.7fr)_148px] items-center px-4 text-xs font-black uppercase tracking-[0.16em] text-zinc-400">
+          <div className="hidden xl:grid xl:grid-cols-[96px_minmax(240px,1.4fr)_110px_150px_180px_120px_minmax(140px,0.8fr)_148px] items-center px-4 text-xs font-black uppercase tracking-[0.16em] text-zinc-400">
             <div />
             <div>Esercizio</div>
             <div className="text-center">Serie</div>
             <div className="text-center">Ripetizioni</div>
+            <div className="text-center">Peso</div>
             <div className="text-center">Recupero</div>
             <div>Note</div>
             <div />
@@ -400,7 +404,7 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                   return (
                     <div
                       key={group.id}
-                      className="grid items-center gap-3 rounded-[1.5rem] border border-zinc-200 bg-white px-3 py-3 shadow-sm xl:grid-cols-[96px_minmax(260px,1.5fr)_120px_170px_130px_minmax(120px,0.7fr)_148px]"
+                      className="grid items-center gap-3 rounded-[1.5rem] border border-zinc-200 bg-white px-3 py-3 shadow-sm xl:grid-cols-[96px_minmax(240px,1.4fr)_110px_150px_180px_120px_minmax(140px,0.8fr)_148px]"
                     >
                       <div className="flex items-center gap-3 text-zinc-300">
                         <GripVertical size={20} />
@@ -459,6 +463,47 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                         className="w-full rounded-[1rem] border border-zinc-200 bg-white px-3 py-3 text-center text-xl font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                       />
 
+                      <div className="flex items-center gap-2">
+                        <input
+                          id={`single-target-load-${group.id}`}
+                          name={`single-target-load-${group.id}`}
+                          type="text"
+                          value={item?.targetLoad ?? ''}
+                          onChange={(event) =>
+                            handleUpdateGroup(group.id, (current) => ({
+                              ...current,
+                              items: current.items.map((entry, itemIndex) =>
+                                itemIndex === 0 ? { ...entry, targetLoad: event.target.value } : entry
+                              ),
+                            }))
+                          }
+                          placeholder="Peso"
+                          className="min-w-0 flex-1 rounded-[1rem] border border-zinc-200 bg-white px-3 py-3 text-center text-xl font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                        />
+                        <select
+                          id={`single-target-load-unit-${group.id}`}
+                          name={`single-target-load-unit-${group.id}`}
+                          value={item?.targetLoadUnit ?? 'kg'}
+                          onChange={(event) =>
+                            handleUpdateGroup(group.id, (current) => ({
+                              ...current,
+                              items: current.items.map((entry, itemIndex) =>
+                                itemIndex === 0
+                                  ? {
+                                      ...entry,
+                                      targetLoadUnit: event.target.value === 'lb' ? 'lb' : 'kg',
+                                    }
+                                  : entry
+                              ),
+                            }))
+                          }
+                          className="h-[54px] w-[76px] rounded-[1rem] border border-zinc-200 bg-white px-3 text-base font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                        >
+                          <option value="kg">kg</option>
+                          <option value="lb">lb</option>
+                        </select>
+                      </div>
+
                       <input
                         id={`single-rest-${group.id}`}
                         name={`single-rest-${group.id}`}
@@ -504,7 +549,7 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                 return (
                   <div
                     key={group.id}
-                    className="grid gap-3 rounded-[1.5rem] border-2 border-emerald-200 bg-emerald-50/40 px-3 py-3 shadow-sm xl:grid-cols-[96px_minmax(260px,1.5fr)_120px_170px_130px_minmax(120px,0.7fr)_148px]"
+                    className="grid gap-3 rounded-[1.5rem] border-2 border-emerald-200 bg-emerald-50/40 px-3 py-3 shadow-sm xl:grid-cols-[96px_minmax(240px,1.4fr)_110px_150px_180px_120px_minmax(140px,0.8fr)_148px]"
                   >
                     <div className="flex items-center gap-3 text-emerald-300">
                       <GripVertical size={20} />
@@ -594,6 +639,53 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                           placeholder="Ripetizioni"
                           className="w-full rounded-[1rem] border border-emerald-200 bg-white px-3 py-3 text-center text-xl font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                         />
+                      ))}
+                    </div>
+
+                    <div className="space-y-3">
+                      {group.items.map((item) => (
+                        <div key={`${item.id}-target-load`} className="flex items-center gap-2">
+                          <input
+                            id={`superset-target-load-${group.id}-${item.id}`}
+                            name={`superset-target-load-${group.id}-${item.id}`}
+                            type="text"
+                            value={item.targetLoad}
+                            onChange={(event) =>
+                              handleUpdateGroup(group.id, (current) => ({
+                                ...current,
+                                items: current.items.map((entry) =>
+                                  entry.id === item.id
+                                    ? { ...entry, targetLoad: event.target.value }
+                                    : entry
+                                ),
+                              }))
+                            }
+                            placeholder="Peso"
+                            className="min-w-0 flex-1 rounded-[1rem] border border-emerald-200 bg-white px-3 py-3 text-center text-xl font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          />
+                          <select
+                            id={`superset-target-load-unit-${group.id}-${item.id}`}
+                            name={`superset-target-load-unit-${group.id}-${item.id}`}
+                            value={item.targetLoadUnit ?? 'kg'}
+                            onChange={(event) =>
+                              handleUpdateGroup(group.id, (current) => ({
+                                ...current,
+                                items: current.items.map((entry) =>
+                                  entry.id === item.id
+                                    ? {
+                                        ...entry,
+                                        targetLoadUnit: event.target.value === 'lb' ? 'lb' : 'kg',
+                                      }
+                                    : entry
+                                ),
+                              }))
+                            }
+                            className="h-[54px] w-[76px] rounded-[1rem] border border-emerald-200 bg-white px-3 text-base font-black text-zinc-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                          >
+                            <option value="kg">kg</option>
+                            <option value="lb">lb</option>
+                          </select>
+                        </div>
                       ))}
                     </div>
 

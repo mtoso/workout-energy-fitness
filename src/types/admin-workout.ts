@@ -1,9 +1,11 @@
-import type { PreviousData } from './workout';
+import type { PreviousData, WeightUnit } from './workout';
 
 export interface AdminWorkoutGroupItem {
   id: string;
   name: string;
   reps: string;
+  targetLoad: string;
+  targetLoadUnit: WeightUnit;
   previous?: PreviousData;
 }
 

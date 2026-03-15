@@ -8,6 +8,8 @@ export interface WorkoutExerciseInput {
   sets: number;
   reps: string;
   rest: string;
+  targetLoad?: string;
+  targetLoadUnit?: 'kg' | 'lb';
   trainerNote?: string;
   previous?: {
     weight: string | number;
@@ -39,6 +41,14 @@ const validateExercise = (exercise: WorkoutExerciseInput, dayIndex: number, exer
 
   if (!exercise.reps?.trim() || !exercise.rest?.trim()) {
     return `Giorno ${dayIndex + 1}, esercizio ${exerciseIndex + 1}: ripetizioni e recupero sono obbligatori.`;
+  }
+
+  if (
+    exercise.targetLoadUnit &&
+    exercise.targetLoadUnit !== 'kg' &&
+    exercise.targetLoadUnit !== 'lb'
+  ) {
+    return `Giorno ${dayIndex + 1}, esercizio ${exerciseIndex + 1}: l'unità del peso deve essere kg o lb.`;
   }
 
   return null;
@@ -101,6 +111,8 @@ const toRichAdminPlan = (input: WorkoutPlanInput) => ({
             {
               name: exercise.name,
               reps: exercise.reps,
+              targetLoad: exercise.targetLoad ?? '',
+              targetLoadUnit: exercise.targetLoadUnit ?? 'kg',
               previous: exercise.previous,
             },
           ],

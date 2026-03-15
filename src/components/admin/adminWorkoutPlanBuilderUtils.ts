@@ -13,6 +13,8 @@ const createItem = (): AdminWorkoutGroupItem => ({
   id: createId(),
   name: '',
   reps: '10',
+  targetLoad: '',
+  targetLoadUnit: 'kg',
 });
 
 const createDay = (index: number): AdminWorkoutDay => ({
@@ -41,6 +43,8 @@ export const cloneAdminWorkoutGroupItem = (item: AdminWorkoutGroupItem): AdminWo
   id: item.id,
   name: item.name,
   reps: item.reps,
+  targetLoad: item.targetLoad ?? '',
+  targetLoadUnit: item.targetLoadUnit ?? 'kg',
   previous: item.previous ? { ...item.previous } : undefined,
 });
 
@@ -100,6 +104,8 @@ export const toAdminWorkoutPlanInput = (plan: AdminWorkoutPlan | null): AdminWor
             id: item.id,
             name: item.name,
             reps: item.reps,
+            targetLoad: item.targetLoad ?? '',
+            targetLoadUnit: item.targetLoadUnit ?? 'kg',
             previous: item.previous ? { ...item.previous } : undefined,
           })),
         })),

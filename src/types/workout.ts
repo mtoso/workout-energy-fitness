@@ -1,3 +1,5 @@
+export type WeightUnit = 'kg' | 'lb';
+
 export interface PreviousData {
   weight: number | string;
   reps: number | string;
@@ -10,6 +12,8 @@ export interface Exercise {
   sets: number;
   reps: string;
   rest: string;
+  targetLoad?: string;
+  targetLoadUnit?: WeightUnit;
   previous?: PreviousData;
   trainerNote?: string;
 }
