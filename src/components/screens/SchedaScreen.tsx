@@ -230,86 +230,83 @@ export const SchedaScreen = ({
     );
   };
 
-  const renderPlanDetailContent = () => (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-black tracking-tight text-zinc-900">{plan.title}</h2>
-              {selectedPlanSummary?.isPreferred ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
-                  <Star size={12} className="fill-current" /> Preferita
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 text-sm text-zinc-500">
-              Pubblicata il {plan.publishedAt ? formatPublishedAt(plan.publishedAt) : '-'}
-            </p>
-          </div>
-
-          {selectedPlanSummary?.isPreferred ? null : (
-            <button
-              onClick={() => onSetPreferred(plan.id)}
-              disabled={isSettingPreferred}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:opacity-50"
-            >
-              <Star size={16} />
-              {isSettingPreferred ? 'Aggiornamento...' : 'Imposta come preferita'}
-            </button>
-          )}
+  const renderPlanDetailHeader = (compact = false) => (
+    <div className={`flex flex-col gap-4 ${compact ? '' : 'pb-1'}`}>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className={`${compact ? 'text-3xl' : 'text-2xl'} font-black tracking-tight text-zinc-900`}>
+            {plan.title}
+          </h2>
+          {selectedPlanSummary?.isPreferred ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+              <Star size={12} className="fill-current" /> Preferita
+            </span>
+          ) : null}
         </div>
-      </section>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+          <Calendar size={14} />
+          <span>Pubblicata il {plan.publishedAt ? formatPublishedAt(plan.publishedAt) : '-'}</span>
+        </div>
+      </div>
+
+      {selectedPlanSummary?.isPreferred ? null : (
+        <button
+          onClick={() => onSetPreferred(plan.id)}
+          disabled={isSettingPreferred}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:opacity-50 sm:w-auto"
+        >
+          <Star size={16} />
+          {isSettingPreferred ? 'Aggiornamento...' : 'Imposta come preferita'}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderPlanDetailContent = (showHeader = true) => (
+    <div className="space-y-6">
+      {showHeader ? renderPlanDetailHeader() : null}
 
       <section className="space-y-4">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] lg:items-start">
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <div>
+            <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">Settimane</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {plan.weeks.map((week, index) => (
+                <button
+                  key={week.id}
+                  onClick={() => onActiveWeekChange(week.id)}
+                  className={`whitespace-nowrap rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                    activeWeek?.id === week.id
+                      ? 'border-zinc-900 bg-zinc-900 text-white shadow-md'
+                      : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-100'
+                  }`}
+                >
+                  {week.name || `Settimana ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeWeek ? (
             <div>
-              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">Settimane</p>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 lg:flex-col lg:overflow-visible">
-                {plan.weeks.map((week, index) => (
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">Giorni</p>
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                {activeWeek.days.map((day) => (
                   <button
-                    key={week.id}
-                    onClick={() => onActiveWeekChange(week.id)}
+                    key={`day-${day.id}`}
+                    onClick={() => onActiveDayChange(day.id)}
                     className={`whitespace-nowrap rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition-colors ${
-                      activeWeek?.id === week.id
-                        ? 'border-zinc-900 bg-zinc-900 text-white shadow-md'
+                      activeDay?.id === day.id
+                        ? 'border-emerald-300 bg-emerald-50 text-zinc-900 shadow-sm'
                         : 'border-zinc-200 bg-white text-zinc-500 hover:bg-zinc-100'
                     }`}
                   >
-                    {week.name || `Settimana ${index + 1}`}
+                    {day.name}
                   </button>
                 ))}
               </div>
             </div>
-
-            {activeWeek ? (
-              <div>
-                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">Giorni</p>
-                <div className="space-y-2">
-                  {activeWeek.days.map((day) => (
-                    <button
-                      key={`day-${day.id}`}
-                      onClick={() => onActiveDayChange(day.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                        activeDay?.id === day.id
-                          ? 'border-emerald-300 bg-emerald-50 shadow-sm'
-                          : 'border-zinc-200 bg-white hover:border-zinc-300'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-zinc-900">{day.name}</p>
-                          <p className="mt-1 truncate text-xs text-zinc-500">{day.focus || 'Focus non specificato'}</p>
-                        </div>
-                        <ChevronRight size={16} className="shrink-0 text-zinc-300" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
 
           {renderExerciseList()}
         </div>
@@ -343,10 +340,10 @@ export const SchedaScreen = ({
                 <ArrowLeft size={20} />
               </button>
               <p className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">Dettaglio scheda</p>
-              <h1 className="truncate text-3xl font-black tracking-tight text-zinc-900">{plan.title}</h1>
+              {renderPlanDetailHeader(true)}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-hide">{renderPlanDetailContent()}</div>
+            <div className="flex-1 overflow-y-auto px-5 py-5 scrollbar-hide">{renderPlanDetailContent(false)}</div>
           </>
         )}
       </div>
@@ -363,7 +360,7 @@ export const SchedaScreen = ({
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">{plans.map((entry) => renderPlanRow(entry))}</div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-28">{renderPlanDetailContent()}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-hide pb-28">{renderPlanDetailContent(true)}</div>
       </div>
     </div>
   );
