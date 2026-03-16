@@ -103,6 +103,15 @@ export const UserAppPage = ({ screen }: UserAppPageProps) => {
     return selectedPlanQuery.data?.plan ?? null;
   }, [selectedPlanId, selectedPlanQuery.data?.plan, workoutOverviewQuery.data]);
 
+  const displayName = useMemo(() => {
+    const fullName = meQuery.data?.user?.fullName?.trim();
+    if (fullName) {
+      return fullName.split(/\s+/)[0];
+    }
+
+    return meQuery.data?.user?.email.split('@')[0] ?? '';
+  }, [meQuery.data?.user?.email, meQuery.data?.user?.fullName]);
+
   const isLoading =
     meQuery.isLoading ||
     workoutOverviewQuery.isLoading ||
@@ -157,6 +166,7 @@ export const UserAppPage = ({ screen }: UserAppPageProps) => {
       isSettingPreferredPlan={setPreferredMutation.isPending}
       userId={meQuery.data.user.id}
       userEmail={meQuery.data.user.email}
+      displayName={displayName}
       isAdmin={meQuery.data.user.canManageClients}
       onSelectPlan={setSelectedPlanIdIntent}
       onSetPreferredPlan={(planId) => setPreferredMutation.mutate(planId)}

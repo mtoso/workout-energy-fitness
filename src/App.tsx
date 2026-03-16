@@ -33,6 +33,7 @@ interface WorkoutAppProps {
   isSettingPreferredPlan: boolean;
   userId: string;
   userEmail: string;
+  displayName: string;
   isAdmin: boolean;
   onSelectPlan: (planId: string) => void;
   onSetPreferredPlan: (planId: string) => void;
@@ -54,6 +55,7 @@ export default function App({
   isSettingPreferredPlan,
   userId,
   userEmail,
+  displayName,
   isAdmin,
   onSelectPlan,
   onSetPreferredPlan,
@@ -223,7 +225,7 @@ export default function App({
           onStartWorkout={handleStartWorkout}
           preferredPlan={effectivePreferredPlan}
           hasUnseenPublication={hasUnseenPublication}
-          displayName={userEmail.split('@')[0] ?? userEmail}
+          displayName={displayName}
         />
       )}
 

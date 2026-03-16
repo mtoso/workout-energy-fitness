@@ -29,9 +29,8 @@ export const HomeScreen = ({
             <p className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">
               Home
             </p>
-            <p className="text-zinc-500 font-medium">Ciao,</p>
             <h1 className="truncate text-3xl font-bold text-zinc-900 tracking-tight">
-            {displayName}
+              Ciao, {displayName}
             </h1>
           </div>
           <button
@@ -96,7 +95,7 @@ export const HomeScreen = ({
                       onClick={() => onStartWorkout(todayWorkout, null)}
                       className="w-full bg-emerald-500 text-zinc-950 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
                     >
-                      <Play size={18} fill="currentColor" /> Inizia Ora
+                      <Play size={18} fill="currentColor" /> Inizia workout
                     </button>
                     <button
                       onClick={() => onNavigate('scheda')}
