@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Copy, Dumbbell, GripVertical, Link2, Plus, Trash2, X } from 'lucide-react';
+import { Copy, Dumbbell, GripVertical, Link2, Plus, Trash2 } from 'lucide-react';
 import type {
   AdminWorkoutDay,
   AdminWorkoutGroup,
@@ -539,7 +539,7 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-500"
                         title="Rimuovi esercizio"
                       >
-                        <X size={18} />
+                        <Trash2 size={18} />
                         <span>Rimuovi</span>
                       </button>
                     </div>
@@ -591,7 +591,7 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                               className="flex h-10 w-10 items-center justify-center rounded-xl text-emerald-500 transition hover:bg-red-50 hover:text-red-500"
                               title="Rimuovi esercizio dalla super serie"
                             >
-                              <X size={16} />
+                              <Trash2 size={16} />
                             </button>
                           ) : null}
                         </div>
@@ -724,7 +724,7 @@ export const AdminWorkoutPlanBuilder = ({ value, onChange }: AdminWorkoutPlanBui
                       className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-500"
                       title="Rimuovi super serie"
                     >
-                      <X size={18} />
+                      <Trash2 size={18} />
                       <span>Rimuovi</span>
                     </button>
                   </div>
