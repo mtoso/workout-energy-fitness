@@ -302,12 +302,6 @@ export const AdminUserDetailPage = () => {
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center gap-3">
-                      <span className="text-zinc-500">Scheda corrente</span>
-                      <span className="font-bold text-zinc-900 text-right">
-                        {detailQuery.data.workouts.find((workout) => workout.isCurrent)?.name ?? '-'}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
@@ -498,14 +492,20 @@ export const AdminUserDetailPage = () => {
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-bold text-zinc-900">{workout.name}</p>
-                                {workout.isCurrent ? (
-                                  <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold">
-                                    Corrente
+                                {workout.isPublished ? (
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                    Pubblicata
                                   </span>
-                                ) : null}
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 text-xs font-bold">
+                                    Bozza
+                                  </span>
+                                )}
                               </div>
                               <p className="text-sm text-zinc-500 mt-1">
-                                Aggiornata il {formatDateTime(workout.updatedAt)}
+                                {workout.isPublished && workout.publishedAt
+                                  ? `Pubblicata il ${formatDateTime(workout.publishedAt)}`
+                                  : `Bozza aggiornata il ${formatDateTime(workout.updatedAt)}`}
                               </p>
                             </div>
                             <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-700 text-sm font-semibold shrink-0">

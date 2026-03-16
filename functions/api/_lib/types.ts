@@ -42,11 +42,13 @@ export interface UserRow {
   invited_at: string | null;
   activated_at: string | null;
   last_login_at: string | null;
+  preferred_workout_plan_id?: string | null;
+  last_seen_workout_publication_at?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface InvitedUserRow extends UserRow {
   invite_token_hash: string;
-  invite_expires_at: string;
+  invite_expires_at: string | null;
 }

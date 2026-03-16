@@ -5,11 +5,28 @@ import type {
   AdminWorkoutPlanSummary,
 } from '../../types/admin-workout';
 import type { UserType } from '../../types/auth';
-import type { WorkoutPlan } from '../../types/workout';
+import type { WorkoutPlan, WorkoutPlansOverview } from '../../types/workout';
 import { apiFetch } from './client';
 
 export const getMyWorkoutPlan = () =>
   apiFetch<{ plan: WorkoutPlan | null }>('/api/workout-plan/me');
+
+export const getMyWorkoutPlansOverview = () =>
+  apiFetch<WorkoutPlansOverview>('/api/workout-plans/me');
+
+export const getMyWorkoutPlanById = (planId: string) =>
+  apiFetch<{ plan: WorkoutPlan }>(`/api/workout-plans/me/${planId}`);
+
+export const setMyPreferredWorkoutPlan = (planId: string) =>
+  apiFetch<WorkoutPlansOverview>('/api/workout-plans/me/preferred', {
+    method: 'POST',
+    body: JSON.stringify({ planId }),
+  });
+
+export const markMyWorkoutNotificationsSeen = () =>
+  apiFetch<{ lastSeenAt: string | null }>('/api/workout-plans/me/notifications/seen', {
+    method: 'POST',
+  });
 
 export const getAdminUsers = () =>
   apiFetch<{ users: AdminUserSummary[] }>('/api/admin/users');
@@ -85,6 +102,14 @@ export const saveAdminWorkoutPlan = (
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+
+export const publishAdminWorkoutPlan = (userId: string, planId: string) =>
+  apiFetch<{ plan: AdminWorkoutPlan }>(
+    `/api/admin/users/${userId}/workouts/${planId}/publish`,
+    {
+      method: 'POST',
+    }
+  );
 
 export const activateAdminWorkoutPlan = (userId: string, planId: string) =>
   apiFetch<{ plan: AdminWorkoutPlan }>(

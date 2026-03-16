@@ -34,7 +34,8 @@ export interface AdminWorkoutWeek {
 export interface AdminWorkoutPlan {
   id: string;
   title: string;
-  isCurrent: boolean;
+  isPublished: boolean;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
   weeks: AdminWorkoutWeek[];
@@ -44,7 +45,8 @@ export interface AdminWorkoutPlanSummary {
   id: string;
   name: string;
   date: string;
-  isCurrent: boolean;
+  isPublished: boolean;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

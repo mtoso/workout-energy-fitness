@@ -15,8 +15,8 @@ import {
   meQueryOptions,
 } from '../lib/api/query-options';
 import {
-  activateAdminWorkoutPlan,
   getAdminWorkoutPlan,
+  publishAdminWorkoutPlan,
   saveAdminWorkoutPlan,
 } from '../lib/api/workout';
 import { queryClient } from '../lib/query-client';
@@ -75,6 +75,7 @@ const AdminWorkoutEditorView = ({
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [saveError, setSaveError] = useState<string | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  const draftIsDirty = !arePlanInputsEqual(draft, lastSavedDraft);
 
   const saveMutation = useMutation({
     mutationFn: (payload: AdminWorkoutPlanInput) => saveAdminWorkoutPlan(userId, planId, payload),
@@ -86,9 +87,6 @@ const AdminWorkoutEditorView = ({
       setSaveError(null);
       queryClient.setQueryData(['admin', 'workout-plan', userId, planId], data);
       await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
-      if (isPersonalView) {
-        await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-      }
     },
     onError: (error) => {
       setSaveState('error');
@@ -96,15 +94,26 @@ const AdminWorkoutEditorView = ({
     },
   });
 
-  const activateWorkoutMutation = useMutation({
-    mutationFn: () => activateAdminWorkoutPlan(userId, planId),
+  const publishWorkoutMutation = useMutation({
+    mutationFn: async () => {
+      if (debounceTimerRef.current) {
+        window.clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+
+      if (draftIsDirty) {
+        setSaveState('saving');
+        setSaveError(null);
+        await saveMutation.mutateAsync(cloneAdminWorkoutPlanInput(draft));
+      }
+
+      return publishAdminWorkoutPlan(userId, planId);
+    },
     onSuccess: async (data) => {
       setSaveError(null);
       queryClient.setQueryData(['admin', 'workout-plan', userId, planId], data);
       await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
-      if (isPersonalView) {
-        await queryClient.invalidateQueries({ queryKey: ['workout', 'me'] });
-      }
+      await queryClient.invalidateQueries({ queryKey: ['workout'] });
     },
     onError: (error) => {
       setSaveState('error');
@@ -113,7 +122,7 @@ const AdminWorkoutEditorView = ({
   });
 
   useEffect(() => {
-    if (arePlanInputsEqual(draft, lastSavedDraft)) {
+    if (!draftIsDirty) {
       return;
     }
 
@@ -130,7 +139,7 @@ const AdminWorkoutEditorView = ({
         window.clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [draft, lastSavedDraft, saveMutation]);
+  }, [draft, draftIsDirty, saveMutation]);
 
   useEffect(
     () => () => {
@@ -156,7 +165,8 @@ const AdminWorkoutEditorView = ({
     });
   };
 
-  const isCurrentWorkout = plan.isCurrent;
+  const isPublished = plan.isPublished;
+  const publishButtonLabel = isPublished ? 'Ripubblica scheda' : 'Pubblica scheda';
 
   return (
     <div className="w-full space-y-0">
@@ -208,37 +218,13 @@ const AdminWorkoutEditorView = ({
               )}
             </div>
 
-            <div className="hidden h-10 w-px bg-zinc-200 md:block" />
-
             <button
               type="button"
-              onClick={() => {
-                if (!isCurrentWorkout && !activateWorkoutMutation.isPending) {
-                  activateWorkoutMutation.mutate();
-                }
-              }}
-              className="inline-flex items-center gap-3 disabled:cursor-default"
-              aria-pressed={isCurrentWorkout}
-              disabled={isCurrentWorkout || activateWorkoutMutation.isPending}
+              onClick={() => publishWorkoutMutation.mutate()}
+              className="inline-flex items-center justify-center rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:cursor-default disabled:opacity-50 md:text-base"
+              disabled={publishWorkoutMutation.isPending}
             >
-              <span
-                className={`text-base font-bold transition-colors md:text-xl ${
-                  isCurrentWorkout ? 'text-zinc-900' : 'text-zinc-400'
-                }`}
-              >
-                Pubblica
-              </span>
-              <span
-                className={`relative inline-flex h-11 w-[74px] items-center rounded-full border border-transparent transition-colors ${
-                  isCurrentWorkout ? 'bg-emerald-500' : 'bg-zinc-200'
-                } ${activateWorkoutMutation.isPending ? 'opacity-60' : ''}`}
-              >
-                <span
-                  className={`inline-block h-9 w-9 transform rounded-full bg-white shadow transition ${
-                    isCurrentWorkout ? 'translate-x-8' : 'translate-x-1'
-                  }`}
-                />
-              </span>
+              {publishWorkoutMutation.isPending ? 'Pubblicazione...' : publishButtonLabel}
             </button>
           </div>
         </div>
@@ -254,8 +240,10 @@ const AdminWorkoutEditorView = ({
         <AdminWorkoutPlanBuilder value={draft} onChange={handleDraftChange} />
 
         <div className="mt-6 px-1 text-sm text-zinc-400">
-          {selectedPlanSummary?.updatedAt ? (
-            <span>Ultimo aggiornamento salvato: {formatDateTime(selectedPlanSummary.updatedAt)}</span>
+          {plan.publishedAt ? (
+            <span>Scheda pubblicata il {formatDateTime(plan.publishedAt)}</span>
+          ) : selectedPlanSummary?.updatedAt ? (
+            <span>Bozza salvata il {formatDateTime(selectedPlanSummary.updatedAt)}</span>
           ) : (
             <span>
               {isPersonalView ? 'Scheda personale' : `${userTypeLabel(user.userType)} ${user.fullName}`}

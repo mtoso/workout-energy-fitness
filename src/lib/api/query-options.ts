@@ -4,7 +4,9 @@ import {
   getAdminCoaches,
   getAdminUserDetail,
   getAdminUsers,
+  getMyWorkoutPlanById,
   getMyWorkoutPlan,
+  getMyWorkoutPlansOverview,
 } from './workout';
 
 export const meQueryOptions = () =>
@@ -28,6 +30,21 @@ export const myWorkoutQueryOptions = () =>
   queryOptions({
     queryKey: ['workout', 'me'],
     queryFn: getMyWorkoutPlan,
+    staleTime: 30_000,
+  });
+
+export const myWorkoutOverviewQueryOptions = () =>
+  queryOptions({
+    queryKey: ['workout', 'overview'],
+    queryFn: getMyWorkoutPlansOverview,
+    staleTime: 30_000,
+  });
+
+export const myWorkoutPlanByIdQueryOptions = (planId: string) =>
+  queryOptions({
+    queryKey: ['workout', 'plan', planId],
+    queryFn: () => getMyWorkoutPlanById(planId),
+    enabled: Boolean(planId),
     staleTime: 30_000,
   });
 

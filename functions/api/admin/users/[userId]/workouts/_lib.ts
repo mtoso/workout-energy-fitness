@@ -5,6 +5,7 @@ export {
   createWorkoutPlanForUser,
   getWorkoutPlanById,
   listWorkoutPlansForUser,
+  publishWorkoutPlanForUser,
   saveWorkoutPlanById,
   validateAdminWorkoutPlanInput,
 } from '../../../../_lib/admin-workouts';

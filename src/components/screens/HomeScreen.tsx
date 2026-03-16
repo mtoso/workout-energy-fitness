@@ -1,23 +1,25 @@
-import { Dumbbell, FileText, Play, Scale, TrendingDown } from 'lucide-react';
+import { BellRing, Dumbbell, FileText, Play, Scale, TrendingDown } from 'lucide-react';
 import { WEIGHT_HISTORY } from '../../data/workout-data';
 import defaultProfileLogo from '../../assets/profile-default-logo.png';
-import type { Exercise, WorkoutDay } from '../../types/workout';
+import type { Exercise, WorkoutDay, WorkoutPlan } from '../../types/workout';
 
 interface HomeScreenProps {
   onNavigate: (screen: 'home' | 'scheda' | 'profile') => void;
   onStartWorkout: (day: WorkoutDay, ex: Exercise | null) => void;
-  schedaData: WorkoutDay[];
+  preferredPlan: WorkoutPlan | null;
+  hasUnseenPublication: boolean;
   displayName: string;
 }
 
 export const HomeScreen = ({
   onNavigate,
   onStartWorkout,
-  schedaData,
+  preferredPlan,
+  hasUnseenPublication,
   displayName,
 }: HomeScreenProps) => {
   const currentWeight = WEIGHT_HISTORY[WEIGHT_HISTORY.length - 1];
-  const todayWorkout = schedaData[0] ?? null;
+  const todayWorkout = preferredPlan?.days[0] ?? null;
 
   return (
     <div className="flex-1 overflow-y-auto bg-zinc-50 pb-24 scrollbar-hide min-h-0">
@@ -42,18 +44,42 @@ export const HomeScreen = ({
       </div>
 
       <div className="px-6 mt-8 space-y-6">
+        {hasUnseenPublication ? (
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-600">
+                <BellRing size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black uppercase tracking-[0.16em] text-emerald-700">
+                  Nuova scheda disponibile
+                </p>
+                <p className="mt-1 text-sm text-emerald-900">
+                  Il coach ha pubblicato una nuova scheda. Apri lo storico per scegliere se usarla.
+                </p>
+              </div>
+              <button
+                onClick={() => onNavigate('scheda')}
+                className="rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-bold text-zinc-950 transition hover:bg-emerald-400"
+              >
+                Apri schede
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div>
           <h2 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">
-            Il tuo allenamento
+            La tua scheda
           </h2>
           <div className="bg-zinc-900 rounded-3xl p-6 text-white relative overflow-hidden shadow-lg shadow-zinc-900/10">
             <div className="relative z-10">
               <div className="bg-zinc-800/50 w-fit px-3 py-1 rounded-full text-xs font-semibold text-emerald-400 mb-4 flex items-center gap-1.5">
-                <FileText size={14} /> Scheda Attuale
+                <FileText size={14} /> Scheda preferita
               </div>
               {todayWorkout ? (
                 <>
-                  <h3 className="text-2xl font-bold mb-1">Massa 6 Settimane</h3>
+                  <h3 className="text-2xl font-bold mb-1">{preferredPlan?.title ?? 'Scheda preferita'}</h3>
                   <p className="text-zinc-400 text-sm mb-6">
                     Oggi: {todayWorkout.name} - {todayWorkout.focus}
                   </p>
@@ -69,7 +95,7 @@ export const HomeScreen = ({
                       onClick={() => onNavigate('scheda')}
                       className="w-full bg-zinc-800 text-white font-medium py-3.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition"
                     >
-                      Vedi tutta la scheda
+                      Apri storico schede
                     </button>
                   </div>
                 </>
@@ -77,7 +103,7 @@ export const HomeScreen = ({
                 <>
                   <h3 className="text-2xl font-bold mb-1">Nessuna scheda</h3>
                   <p className="text-zinc-400 text-sm mb-6">
-                    Non hai ancora una scheda assegnata. Contatta il tuo admin.
+                    Non hai ancora una scheda pubblicata. Contatta il tuo coach o admin.
                   </p>
                 </>
               )}

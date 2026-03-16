@@ -47,8 +47,53 @@ interface PlanRow {
   id: string;
   title: string;
   is_active: number;
+  published_at: string | null;
+  published_snapshot_json: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface FlattenedWorkoutExercise {
+  id: string;
+  type: 'single' | 'superset';
+  name: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  targetLoad?: string;
+  targetLoadUnit?: WorkoutLoadUnit;
+  items?: Array<{
+    id: string;
+    name: string;
+    reps: string;
+    targetLoad?: string;
+    targetLoadUnit?: WorkoutLoadUnit;
+    previous?: {
+      weight: string | number;
+      reps: string | number;
+      date: string;
+    };
+  }>;
+  trainerNote?: string;
+  previous?: {
+    weight: string | number;
+    reps: string | number;
+    date: string;
+  };
+}
+
+interface FlattenedWorkoutDay {
+  id: number;
+  name: string;
+  focus: string;
+  exercises: FlattenedWorkoutExercise[];
+}
+
+interface FlattenedWorkoutPlan {
+  id: string;
+  title: string;
+  publishedAt: string | null;
+  days: FlattenedWorkoutDay[];
 }
 
 const parseNullable = (value: unknown) => {
@@ -74,7 +119,7 @@ const formatDateLabel = (isoValue: string) => {
 const loadPlanRow = async (env: Env, planId: string, userId: string) =>
   env.DB.prepare(
     `
-      SELECT id, title, is_active, created_at, updated_at
+      SELECT id, title, is_active, published_at, published_snapshot_json, created_at, updated_at
       FROM workout_plans
       WHERE id = ?
         AND user_id = ?
@@ -198,10 +243,14 @@ export const validateAdminWorkoutPlanInput = (
 export const listWorkoutPlansForUser = async (env: Env, userId: string) => {
   const plans = await env.DB.prepare(
     `
-      SELECT id, title, is_active, created_at, updated_at
+      SELECT id, title, is_active, published_at, published_snapshot_json, created_at, updated_at
       FROM workout_plans
       WHERE user_id = ?
-      ORDER BY updated_at DESC, created_at DESC
+      ORDER BY
+        CASE WHEN published_at IS NULL THEN 1 ELSE 0 END ASC,
+        datetime(published_at) DESC,
+        datetime(updated_at) DESC,
+        datetime(created_at) DESC
     `
   )
     .bind(userId)
@@ -210,8 +259,9 @@ export const listWorkoutPlansForUser = async (env: Env, userId: string) => {
   return plans.results.map((plan) => ({
     id: plan.id,
     name: plan.title,
-    date: formatDateLabel(plan.updated_at || plan.created_at),
-    isCurrent: Boolean(plan.is_active),
+    date: formatDateLabel(plan.published_at || plan.updated_at || plan.created_at),
+    isPublished: Boolean(plan.published_at),
+    publishedAt: plan.published_at,
     createdAt: plan.created_at,
     updatedAt: plan.updated_at,
   }));
@@ -333,11 +383,102 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
   return {
     id: plan.id,
     title: plan.title,
-    isCurrent: Boolean(plan.is_active),
+    isPublished: Boolean(plan.published_at),
+    publishedAt: plan.published_at,
     createdAt: plan.created_at,
     updatedAt: plan.updated_at,
     weeks: weekResults,
   };
+};
+
+const flattenRichWorkoutPlan = (plan: Awaited<ReturnType<typeof getWorkoutPlanById>>): FlattenedWorkoutPlan | null => {
+  if (!plan) return null;
+
+  const firstWeek = plan.weeks[0];
+  return {
+    id: plan.id,
+    title: plan.title,
+    publishedAt: plan.publishedAt,
+    days: firstWeek
+      ? firstWeek.days.map((day, dayIndex) => ({
+          id: dayIndex + 1,
+          name: day.name,
+          focus: day.focus,
+          exercises: day.groups.map((group) => {
+            if (group.type === 'single') {
+              const singleItem = group.items[0];
+              return {
+                id: group.id,
+                type: 'single' as const,
+                name: singleItem?.name ?? 'Esercizio',
+                sets: group.sets,
+                reps: singleItem?.reps ?? '',
+                rest: group.rest,
+                targetLoad: singleItem?.targetLoad,
+                targetLoadUnit: singleItem?.targetLoadUnit,
+                items: singleItem
+                  ? [
+                      {
+                        id: singleItem.id,
+                        name: singleItem.name,
+                        reps: singleItem.reps,
+                        targetLoad: singleItem.targetLoad,
+                        targetLoadUnit: singleItem.targetLoadUnit,
+                        previous: singleItem.previous,
+                      },
+                    ]
+                  : undefined,
+                trainerNote: group.notes || undefined,
+                previous: singleItem?.previous,
+              };
+            }
+
+            const compositeName = group.items.map((item) => item.name).join(' + ');
+            const compositeReps = group.items.map((item) => item.reps).join(' / ');
+            const trainerNote = [
+              group.notes?.trim(),
+              `Super Serie: ${group.items.map((item) => `${item.name} (${item.reps})`).join(' + ')}`,
+            ]
+              .filter(Boolean)
+              .join(' | ');
+
+            return {
+              id: group.id,
+              type: 'superset' as const,
+              name: compositeName,
+              sets: group.sets,
+              reps: compositeReps,
+              rest: group.rest,
+              items: group.items.map((item) => ({
+                id: item.id,
+                name: item.name,
+                reps: item.reps,
+                targetLoad: item.targetLoad,
+                targetLoadUnit: item.targetLoadUnit,
+                previous: item.previous,
+              })),
+              trainerNote: trainerNote || undefined,
+              previous: group.items[0]?.previous,
+            };
+          }),
+        }))
+      : [],
+  };
+};
+
+const parsePublishedSnapshot = (value: string | null): FlattenedWorkoutPlan | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value) as FlattenedWorkoutPlan;
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.days)) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
 };
 
 const clearWorkoutPlanStructure = async (env: Env, planId: string) => {
@@ -500,8 +641,6 @@ export const createWorkoutPlanForUser = async (
   actorUserId: string,
   copyFromPlanId?: string | null
 ) => {
-  const existingPlans = await listWorkoutPlansForUser(env, userId);
-  const shouldBeCurrent = existingPlans.length === 0;
   const planId = crypto.randomUUID();
 
   await env.DB.prepare(
@@ -510,14 +649,13 @@ export const createWorkoutPlanForUser = async (
         id,
         user_id,
         title,
-        is_active,
         created_by_user_id,
         updated_by_user_id
       )
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?)
     `
   )
-    .bind(planId, userId, 'Nuova Scheda', shouldBeCurrent ? 1 : 0, actorUserId, actorUserId)
+    .bind(planId, userId, 'Nuova Scheda', actorUserId, actorUserId)
     .run();
 
   let draft: AdminWorkoutPlanInput = {
@@ -548,7 +686,7 @@ export const createWorkoutPlanForUser = async (
     const source = await getWorkoutPlanById(env, userId, copyFromPlanId);
     if (source) {
       draft = {
-        title: `${source.title} Copy`,
+        title: source.title,
         weeks: source.weeks,
       };
     }
@@ -557,108 +695,127 @@ export const createWorkoutPlanForUser = async (
   return saveWorkoutPlanById(env, userId, planId, actorUserId, draft);
 };
 
-export const activateWorkoutPlanForUser = async (env: Env, userId: string, planId: string) => {
+export const getFlattenedWorkoutPlanById = async (
+  env: Env,
+  userId: string,
+  planId: string
+) => {
+  const richPlan = await getWorkoutPlanById(env, userId, planId);
+  return flattenRichWorkoutPlan(richPlan);
+};
+
+export const getPublishedWorkoutPlanSnapshotById = async (
+  env: Env,
+  userId: string,
+  planId: string
+) => {
+  const existingPlan = await loadPlanRow(env, planId, userId);
+  if (!existingPlan || !existingPlan.published_at) {
+    return null;
+  }
+
+  const snapshot = parsePublishedSnapshot(existingPlan.published_snapshot_json);
+  if (snapshot) {
+    return {
+      ...snapshot,
+      id: existingPlan.id,
+      publishedAt: existingPlan.published_at,
+    };
+  }
+
+  const flattened = await getFlattenedWorkoutPlanById(env, userId, planId);
+  if (!flattened) return null;
+
+  return {
+    ...flattened,
+    publishedAt: existingPlan.published_at,
+  };
+};
+
+export const publishWorkoutPlanForUser = async (env: Env, userId: string, planId: string) => {
   const existingPlan = await loadPlanRow(env, planId, userId);
   if (!existingPlan) {
     return fail(404, 'plan_not_found', 'Scheda non trovata.');
   }
 
-  await env.DB.batch([
-    env.DB
-      .prepare(
-        `
-          UPDATE workout_plans
-          SET is_active = 0,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE user_id = ?
-        `
-      )
-      .bind(userId),
-    env.DB
-      .prepare(
-        `
-          UPDATE workout_plans
-          SET is_active = 1,
-              updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `
-      )
-      .bind(planId),
-  ]);
+  const snapshot = await getFlattenedWorkoutPlanById(env, userId, planId);
+  if (!snapshot) {
+    return fail(400, 'invalid_plan', 'La scheda non può essere pubblicata.');
+  }
+
+  await env.DB.prepare(
+    `
+      UPDATE workout_plans
+      SET published_at = CURRENT_TIMESTAMP,
+          published_snapshot_json = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+  )
+    .bind(JSON.stringify(snapshot), planId)
+    .run();
+
+  const preferredPlanRow = await env.DB.prepare(
+    `
+      SELECT preferred_workout_plan_id
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+    `
+  )
+    .bind(userId)
+    .first<{ preferred_workout_plan_id: string | null }>();
+
+  if (!preferredPlanRow?.preferred_workout_plan_id) {
+    await env.DB.prepare(
+      `
+        UPDATE users
+        SET preferred_workout_plan_id = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `
+    )
+      .bind(planId, userId)
+      .run();
+  }
 
   return getWorkoutPlanById(env, userId, planId);
 };
 
+export const activateWorkoutPlanForUser = async (env: Env, userId: string, planId: string) =>
+  publishWorkoutPlanForUser(env, userId, planId);
+
 export const getCurrentFlattenedWorkoutPlanForUser = async (env: Env, userId: string) => {
-  const currentPlan = await env.DB.prepare(
+  const preferredPlanRow = await env.DB.prepare(
+    `
+      SELECT preferred_workout_plan_id
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+    `
+  )
+    .bind(userId)
+    .first<{ preferred_workout_plan_id: string | null }>();
+
+  const preferredPlanId = preferredPlanRow?.preferred_workout_plan_id;
+  if (preferredPlanId) {
+    const preferredPlan = await getPublishedWorkoutPlanSnapshotById(env, userId, preferredPlanId);
+    if (preferredPlan) return preferredPlan;
+  }
+
+  const latestPublishedPlan = await env.DB.prepare(
     `
       SELECT id
       FROM workout_plans
       WHERE user_id = ?
-        AND is_active = 1
-      ORDER BY updated_at DESC
+        AND published_at IS NOT NULL
+      ORDER BY datetime(published_at) DESC, datetime(updated_at) DESC, datetime(created_at) DESC
       LIMIT 1
     `
   )
     .bind(userId)
     .first<{ id: string }>();
 
-  if (!currentPlan) return null;
-
-  const richPlan = await getWorkoutPlanById(env, userId, currentPlan.id);
-  if (!richPlan) return null;
-
-  const firstWeek = richPlan.weeks[0];
-  if (!firstWeek) {
-    return {
-      id: richPlan.id,
-      title: richPlan.title,
-      days: [],
-    };
-  }
-
-  return {
-    id: richPlan.id,
-    title: richPlan.title,
-    days: firstWeek.days.map((day, dayIndex) => ({
-      id: dayIndex + 1,
-      name: day.name,
-      focus: day.focus,
-      exercises: day.groups.map((group) => {
-        if (group.type === 'single') {
-          const singleItem = group.items[0];
-          return {
-            id: group.id,
-            name: singleItem?.name ?? 'Esercizio',
-            sets: group.sets,
-            reps: singleItem?.reps ?? '',
-            rest: group.rest,
-            targetLoad: singleItem?.targetLoad,
-            targetLoadUnit: singleItem?.targetLoadUnit,
-            trainerNote: group.notes || undefined,
-            previous: singleItem?.previous,
-          };
-        }
-
-        const compositeName = group.items.map((item) => item.name).join(' + ');
-        const compositeReps = group.items.map((item) => item.reps).join(' / ');
-        const trainerNote = [
-          group.notes?.trim(),
-          `Super Serie: ${group.items.map((item) => `${item.name} (${item.reps})`).join(' + ')}`,
-        ]
-          .filter(Boolean)
-          .join(' | ');
-
-        return {
-          id: group.id,
-          name: compositeName,
-          sets: group.sets,
-          reps: compositeReps,
-          rest: group.rest,
-          trainerNote: trainerNote || undefined,
-          previous: group.items[0]?.previous,
-        };
-      }),
-    })),
-  };
+  if (!latestPublishedPlan) return null;
+  return getPublishedWorkoutPlanSnapshotById(env, userId, latestPublishedPlan.id);
 };
