@@ -13,6 +13,7 @@ import {
   assignAdminUserCoach,
   createAdminCheckin,
   createAdminUserWorkout,
+  updateAdminUserStatus,
 } from '../lib/api/workout';
 import { queryClient } from '../lib/query-client';
 import { useAdminLogout } from '../hooks/useAdminLogout';
@@ -82,6 +83,7 @@ export const AdminUserDetailPage = () => {
 
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isAddWeightModalOpen, setIsAddWeightModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [weightDate, setWeightDate] = useState(toDateInputValue(new Date()));
   const [weightValue, setWeightValue] = useState('');
   const [fatValue, setFatValue] = useState('');
@@ -137,9 +139,33 @@ export const AdminUserDetailPage = () => {
     },
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: (status: 'active' | 'disabled') => updateAdminUserStatus(userId, status),
+    onSuccess: async (detail) => {
+      setGeneralError(null);
+      setIsStatusModalOpen(false);
+      upsertDetailCache(detail);
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (error) => {
+      setGeneralError(
+        isApiError(error)
+          ? error.message
+          : "Aggiornamento dello stato account non riuscito."
+      );
+    },
+  });
+
   const user = detailQuery.data?.user;
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
   const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
+  const canManageAccountAccess = Boolean(
+    isAdmin &&
+      detailQuery.data &&
+      !isPersonalView &&
+      !detailQuery.data.user.isAdmin &&
+      detailQuery.data.user.status !== 'invited'
+  );
   const showSummaryCards = Boolean(
     detailQuery.data && (isPersonalView || detailQuery.data.user.userType === 'coach')
   );
@@ -155,6 +181,16 @@ export const AdminUserDetailPage = () => {
       ? 'Scheda personale, storico check-in e versioni salvate.'
       : 'Schede, check-in e assegnazione del coach dell’utente selezionato.'
     : 'Gestione completa del profilo selezionato.';
+  const currentStatus = detailQuery.data?.user.status;
+  const nextStatus = currentStatus === 'disabled' ? 'active' : 'disabled';
+  const statusActionLabel =
+    nextStatus === 'disabled' ? 'Disabilita accesso' : 'Riattiva accesso';
+  const statusModalTitle =
+    nextStatus === 'disabled' ? 'Disabilita accesso account' : 'Riattiva accesso account';
+  const statusModalDescription =
+    nextStatus === 'disabled'
+      ? 'L’utente non potrà più accedere all’app. Schede, check-in e dati resteranno salvati.'
+      : 'L’utente tornerà a poter accedere all’app con le credenziali già associate.';
 
   return (
     <>
@@ -292,6 +328,42 @@ export const AdminUserDetailPage = () => {
                     )}
                   </div>
                 )}
+
+                {canManageAccountAccess && detailQuery.data ? (
+                  <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-zinc-900 font-bold">
+                      <Shield size={18} /> Accesso account
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-zinc-500">Stato attuale</p>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                          detailQuery.data.user.status === 'active'
+                            ? 'bg-emerald-50 text-emerald-800'
+                            : 'bg-red-50 text-red-700'
+                        }`}
+                      >
+                        {statusLabel(detailQuery.data.user.status)}
+                      </span>
+                      <p className="text-sm text-zinc-500 pt-1">
+                        {detailQuery.data.user.status === 'active'
+                          ? 'Disabilita temporaneamente l’accesso senza eliminare dati o cronologia.'
+                          : 'Riattiva l’accesso per permettere di nuovo il login all’utente.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsStatusModalOpen(true)}
+                      disabled={updateStatusMutation.isPending}
+                      className={`w-full px-4 py-3 rounded-2xl font-semibold transition ${
+                        detailQuery.data.user.status === 'active'
+                          ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                      } disabled:opacity-50`}
+                    >
+                      {statusActionLabel}
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-6">
@@ -514,6 +586,53 @@ export const AdminUserDetailPage = () => {
                 className="w-full sm:w-auto bg-emerald-500 text-zinc-950 px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:hover:bg-emerald-500 flex items-center justify-center gap-2"
               >
                 Salva check-in
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isStatusModalOpen && canManageAccountAccess && detailQuery.data && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
+          <div
+            className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm pointer-events-auto transition-opacity"
+            onClick={() => setIsStatusModalOpen(false)}
+          />
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl pointer-events-auto relative animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-zinc-900">{statusModalTitle}</h2>
+              <button
+                onClick={() => setIsStatusModalOpen(false)}
+                className="w-8 h-8 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition"
+                aria-label="Chiudi"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-700">
+                Stai per aggiornare l’account di{' '}
+                <span className="font-semibold text-zinc-900">{detailQuery.data.user.fullName}</span>.
+              </p>
+              <p className="text-sm text-zinc-500">{statusModalDescription}</p>
+            </div>
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                onClick={() => setIsStatusModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-bold text-zinc-600 hover:bg-zinc-100 transition w-full sm:w-auto"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => updateStatusMutation.mutate(nextStatus)}
+                disabled={updateStatusMutation.isPending}
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold transition disabled:opacity-50 ${
+                  nextStatus === 'disabled'
+                    ? 'bg-red-600 text-white hover:bg-red-500'
+                    : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
+                }`}
+              >
+                {updateStatusMutation.isPending ? 'Salvataggio...' : statusActionLabel}
               </button>
             </div>
           </div>

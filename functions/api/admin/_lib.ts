@@ -7,6 +7,7 @@ export {
   listCoaches,
   listVisibleUsers,
   assignCoachToClient,
+  updateManagedUserStatus,
 } from '../_lib/admin-users';
 export { createInvitedUser } from '../_lib/users';
 export { fail, json } from '../_lib/response';

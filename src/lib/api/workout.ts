@@ -42,6 +42,12 @@ export const assignAdminUserCoach = (userId: string, coachUserId: string | null)
     body: JSON.stringify({ coachUserId }),
   });
 
+export const updateAdminUserStatus = (userId: string, status: 'active' | 'disabled') =>
+  apiFetch<AdminUserDetail>(`/api/admin/users/${userId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+
 export const createAdminCheckin = (
   userId: string,
   payload: { recordedAt: string; weight: number; fat: number | null }

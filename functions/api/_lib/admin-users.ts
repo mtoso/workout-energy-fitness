@@ -326,3 +326,53 @@ export const createBodyCheckin = async (
 
   return getManagedUserDetail(env, auth, targetUser.id);
 };
+
+export const updateManagedUserStatus = async (
+  env: Env,
+  auth: AuthSession,
+  userId: string,
+  status: UserStatus
+) => {
+  const targetUser = await requireManagedUserAccess(auth, env, userId);
+  if (targetUser instanceof Response) return targetUser;
+
+  if (targetUser.id === auth.user.id) {
+    return fail(400, 'cannot_change_own_status', 'Non puoi modificare lo stato del tuo account.');
+  }
+
+  if (targetUser.is_admin) {
+    return fail(400, 'cannot_change_admin_status', 'Non puoi modificare lo stato di un account amministratore.');
+  }
+
+  if (status !== 'active' && status !== 'disabled') {
+    return fail(400, 'invalid_status', "Lo stato account deve essere 'active' o 'disabled'.");
+  }
+
+  await env.DB.prepare(
+    `
+      UPDATE users
+      SET status = ?,
+          invite_token_hash = CASE WHEN ? = 'active' THEN invite_token_hash ELSE NULL END,
+          invite_expires_at = CASE WHEN ? = 'active' THEN invite_expires_at ELSE NULL END,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+  )
+    .bind(status, status, status, targetUser.id)
+    .run();
+
+  if (status === 'disabled') {
+    await env.DB.prepare(
+      `
+        UPDATE sessions
+        SET revoked_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+          AND revoked_at IS NULL
+      `
+    )
+      .bind(targetUser.id)
+      .run();
+  }
+
+  return getManagedUserDetail(env, auth, targetUser.id);
+};
