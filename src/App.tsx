@@ -7,7 +7,7 @@ import { ProfileScreen } from './components/screens/ProfileScreen';
 import { SchedaScreen } from './components/screens/SchedaScreen';
 import { useScreenWakeLock } from './hooks/useScreenWakeLock';
 import { applyWorkoutPlanOverrides, saveWorkoutExerciseOverrides } from './lib/workout-overrides';
-import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary, WeightUnit } from './types/workout';
+import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary, WeightUnit, WorkoutWeek } from './types/workout';
 
 interface SelectedExerciseRef {
   dayId: number;
@@ -40,6 +40,7 @@ interface WorkoutAppProps {
   onLogout: () => void;
 }
 
+const ACTIVE_SCHEDA_WEEK_STORAGE_KEY = 'workout-active-scheda-week-id';
 const ACTIVE_SCHEDA_DAY_STORAGE_KEY = 'workout-active-scheda-day-id';
 
 export default function App({
@@ -62,6 +63,10 @@ export default function App({
   useScreenWakeLock(true);
 
   const [overridesVersion, setOverridesVersion] = useState(0);
+  const [selectedSchedaWeekId, setSelectedSchedaWeekId] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return window.localStorage.getItem(ACTIVE_SCHEDA_WEEK_STORAGE_KEY) ?? '';
+  });
   const [selectedSchedaDayId, setSelectedSchedaDayId] = useState<number>(() => {
     if (typeof window === 'undefined') return 1;
 
@@ -88,12 +93,21 @@ export default function App({
     [userId, selectedPlan, overridesVersion]
   );
 
+  const resolvedSelectedWeek = useMemo<WorkoutWeek | null>(() => {
+    if (!effectiveSelectedPlan?.weeks.length) return null;
+
+    return (
+      effectiveSelectedPlan.weeks.find((week) => week.id === selectedSchedaWeekId) ??
+      effectiveSelectedPlan.weeks[0]
+    );
+  }, [effectiveSelectedPlan, selectedSchedaWeekId]);
+
   const resolvedSelectedSchedaDayId = useMemo(() => {
-    if (!effectiveSelectedPlan?.days.length) return selectedSchedaDayId;
-    return effectiveSelectedPlan.days.some((day) => day.id === selectedSchedaDayId)
+    if (!resolvedSelectedWeek?.days.length) return selectedSchedaDayId;
+    return resolvedSelectedWeek.days.some((day) => day.id === selectedSchedaDayId)
       ? selectedSchedaDayId
-      : effectiveSelectedPlan.days[0].id;
-  }, [effectiveSelectedPlan, selectedSchedaDayId]);
+      : resolvedSelectedWeek.days[0].id;
+  }, [resolvedSelectedWeek, selectedSchedaDayId]);
 
   const getCompletionKey = useCallback(
     (planId: string | null, dayId: number) => `${planId ?? 'none'}:${dayId}`,
@@ -103,11 +117,18 @@ export default function App({
   const completedExerciseIdsByDay = useMemo(() => {
     if (!effectiveSelectedPlan) return {};
 
-    return effectiveSelectedPlan.days.reduce<Record<number, string[]>>((acc, day) => {
-      acc[day.id] = completedExerciseIdsByPlanDay[getCompletionKey(effectiveSelectedPlan.id, day.id)] ?? [];
-      return acc;
-    }, {});
+    return effectiveSelectedPlan.weeks.flatMap((week) => week.days).reduce<Record<number, string[]>>(
+      (acc, day) => {
+        acc[day.id] = completedExerciseIdsByPlanDay[getCompletionKey(effectiveSelectedPlan.id, day.id)] ?? [];
+        return acc;
+      },
+      {}
+    );
   }, [completedExerciseIdsByPlanDay, effectiveSelectedPlan, getCompletionKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(ACTIVE_SCHEDA_WEEK_STORAGE_KEY, resolvedSelectedWeek?.id ?? '');
+  }, [resolvedSelectedWeek?.id]);
 
   useEffect(() => {
     window.localStorage.setItem(ACTIVE_SCHEDA_DAY_STORAGE_KEY, String(resolvedSelectedSchedaDayId));
@@ -116,7 +137,9 @@ export default function App({
   const selectedExerciseData = useMemo(() => {
     if (!selectedExerciseRef || !effectiveSelectedPlan) return null;
 
-    const day = effectiveSelectedPlan.days.find((entry) => entry.id === selectedExerciseRef.dayId);
+    const day = effectiveSelectedPlan.weeks
+      .flatMap((week) => week.days)
+      .find((entry) => entry.id === selectedExerciseRef.dayId);
     const exercise = day?.exercises.find((entry) => entry.id === selectedExerciseRef.exerciseId);
 
     if (!day || !exercise) return null;
@@ -128,15 +151,22 @@ export default function App({
     (items: Array<{ targetLoad: string; targetLoadUnit: WeightUnit }>) => {
       if (!effectiveSelectedPlan || !selectedExerciseRef) return;
 
-      const dayIndex = effectiveSelectedPlan.days.findIndex((day) => day.id === selectedExerciseRef.dayId);
+      const weekIndex = effectiveSelectedPlan.weeks.findIndex((week) =>
+        week.days.some((day) => day.id === selectedExerciseRef.dayId)
+      );
+      if (weekIndex < 0) return;
+
+      const dayIndex = effectiveSelectedPlan.weeks[weekIndex].days.findIndex(
+        (day) => day.id === selectedExerciseRef.dayId
+      );
       if (dayIndex < 0) return;
 
-      const exerciseIndex = effectiveSelectedPlan.days[dayIndex].exercises.findIndex(
+      const exerciseIndex = effectiveSelectedPlan.weeks[weekIndex].days[dayIndex].exercises.findIndex(
         (exercise) => exercise.id === selectedExerciseRef.exerciseId
       );
       if (exerciseIndex < 0) return;
 
-      saveWorkoutExerciseOverrides(userId, effectiveSelectedPlan, dayIndex, exerciseIndex, items);
+      saveWorkoutExerciseOverrides(userId, effectiveSelectedPlan, weekIndex, dayIndex, exerciseIndex, items);
       setOverridesVersion((current) => current + 1);
     },
     [effectiveSelectedPlan, selectedExerciseRef, userId]
@@ -202,7 +232,9 @@ export default function App({
           plan={effectiveSelectedPlan}
           plans={workoutPlans}
           selectedPlanId={selectedPlanId}
+          activeWeekId={resolvedSelectedWeek?.id ?? null}
           onPlanSelect={onSelectPlan}
+          onActiveWeekChange={setSelectedSchedaWeekId}
           onSetPreferred={onSetPreferredPlan}
           isSettingPreferred={isSettingPreferredPlan}
           onExerciseSelect={(day, ex) =>

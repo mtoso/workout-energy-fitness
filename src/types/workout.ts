@@ -34,11 +34,17 @@ export interface WorkoutDay {
   exercises: Exercise[];
 }
 
+export interface WorkoutWeek {
+  id: string;
+  name: string;
+  days: WorkoutDay[];
+}
+
 export interface WorkoutPlan {
   id: string;
   title: string;
   publishedAt: string | null;
-  days: WorkoutDay[];
+  weeks: WorkoutWeek[];
 }
 
 export interface WorkoutPlanSummary {

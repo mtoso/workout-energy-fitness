@@ -89,11 +89,17 @@ interface FlattenedWorkoutDay {
   exercises: FlattenedWorkoutExercise[];
 }
 
+interface FlattenedWorkoutWeek {
+  id: string;
+  name: string;
+  days: FlattenedWorkoutDay[];
+}
+
 interface FlattenedWorkoutPlan {
   id: string;
   title: string;
   publishedAt: string | null;
-  days: FlattenedWorkoutDay[];
+  weeks: FlattenedWorkoutWeek[];
 }
 
 const parseNullable = (value: unknown) => {
@@ -394,75 +400,77 @@ export const getWorkoutPlanById = async (env: Env, userId: string, planId: strin
 const flattenRichWorkoutPlan = (plan: Awaited<ReturnType<typeof getWorkoutPlanById>>): FlattenedWorkoutPlan | null => {
   if (!plan) return null;
 
-  const firstWeek = plan.weeks[0];
+  let nextDayId = 1;
   return {
     id: plan.id,
     title: plan.title,
     publishedAt: plan.publishedAt,
-    days: firstWeek
-      ? firstWeek.days.map((day, dayIndex) => ({
-          id: dayIndex + 1,
-          name: day.name,
-          focus: day.focus,
-          exercises: day.groups.map((group) => {
-            if (group.type === 'single') {
-              const singleItem = group.items[0];
-              return {
-                id: group.id,
-                type: 'single' as const,
-                name: singleItem?.name ?? 'Esercizio',
-                sets: group.sets,
-                reps: singleItem?.reps ?? '',
-                rest: group.rest,
-                targetLoad: singleItem?.targetLoad,
-                targetLoadUnit: singleItem?.targetLoadUnit,
-                items: singleItem
-                  ? [
-                      {
-                        id: singleItem.id,
-                        name: singleItem.name,
-                        reps: singleItem.reps,
-                        targetLoad: singleItem.targetLoad,
-                        targetLoadUnit: singleItem.targetLoadUnit,
-                        previous: singleItem.previous,
-                      },
-                    ]
-                  : undefined,
-                trainerNote: group.notes || undefined,
-                previous: singleItem?.previous,
-              };
-            }
-
-            const compositeName = group.items.map((item) => item.name).join(' + ');
-            const compositeReps = group.items.map((item) => item.reps).join(' / ');
-            const trainerNote = [
-              group.notes?.trim(),
-              `Super Serie: ${group.items.map((item) => `${item.name} (${item.reps})`).join(' + ')}`,
-            ]
-              .filter(Boolean)
-              .join(' | ');
-
+    weeks: plan.weeks.map((week) => ({
+      id: week.id,
+      name: week.name,
+      days: week.days.map((day) => ({
+        id: nextDayId++,
+        name: day.name,
+        focus: day.focus,
+        exercises: day.groups.map((group) => {
+          if (group.type === 'single') {
+            const singleItem = group.items[0];
             return {
               id: group.id,
-              type: 'superset' as const,
-              name: compositeName,
+              type: 'single' as const,
+              name: singleItem?.name ?? 'Esercizio',
               sets: group.sets,
-              reps: compositeReps,
+              reps: singleItem?.reps ?? '',
               rest: group.rest,
-              items: group.items.map((item) => ({
-                id: item.id,
-                name: item.name,
-                reps: item.reps,
-                targetLoad: item.targetLoad,
-                targetLoadUnit: item.targetLoadUnit,
-                previous: item.previous,
-              })),
-              trainerNote: trainerNote || undefined,
-              previous: group.items[0]?.previous,
+              targetLoad: singleItem?.targetLoad,
+              targetLoadUnit: singleItem?.targetLoadUnit,
+              items: singleItem
+                ? [
+                    {
+                      id: singleItem.id,
+                      name: singleItem.name,
+                      reps: singleItem.reps,
+                      targetLoad: singleItem.targetLoad,
+                      targetLoadUnit: singleItem.targetLoadUnit,
+                      previous: singleItem.previous,
+                    },
+                  ]
+                : undefined,
+              trainerNote: group.notes || undefined,
+              previous: singleItem?.previous,
             };
-          }),
-        }))
-      : [],
+          }
+
+          const compositeName = group.items.map((item) => item.name).join(' + ');
+          const compositeReps = group.items.map((item) => item.reps).join(' / ');
+          const trainerNote = [
+            group.notes?.trim(),
+            `Super Serie: ${group.items.map((item) => `${item.name} (${item.reps})`).join(' + ')}`,
+          ]
+            .filter(Boolean)
+            .join(' | ');
+
+          return {
+            id: group.id,
+            type: 'superset' as const,
+            name: compositeName,
+            sets: group.sets,
+            reps: compositeReps,
+            rest: group.rest,
+            items: group.items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              reps: item.reps,
+              targetLoad: item.targetLoad,
+              targetLoadUnit: item.targetLoadUnit,
+              previous: item.previous,
+            })),
+            trainerNote: trainerNote || undefined,
+            previous: group.items[0]?.previous,
+          };
+        }),
+      })),
+    })),
   };
 };
 
@@ -471,7 +479,7 @@ const parsePublishedSnapshot = (value: string | null): FlattenedWorkoutPlan | nu
 
   try {
     const parsed = JSON.parse(value) as FlattenedWorkoutPlan;
-    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.days)) {
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.weeks)) {
       return null;
     }
 

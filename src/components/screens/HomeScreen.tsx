@@ -19,7 +19,7 @@ export const HomeScreen = ({
   displayName,
 }: HomeScreenProps) => {
   const currentWeight = WEIGHT_HISTORY[WEIGHT_HISTORY.length - 1];
-  const todayWorkout = preferredPlan?.days[0] ?? null;
+  const todayWorkout = preferredPlan?.weeks[0]?.days[0] ?? null;
 
   return (
     <div className="flex-1 overflow-y-auto bg-zinc-50 pb-24 scrollbar-hide min-h-0">

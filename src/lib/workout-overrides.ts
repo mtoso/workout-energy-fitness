@@ -12,8 +12,12 @@ const STORAGE_PREFIX = 'workout-plan-overrides';
 const getPlanKey = (userId: string, plan: WorkoutPlan) =>
   `${STORAGE_PREFIX}:${userId}:${plan.id}:${plan.publishedAt ?? 'draft'}`;
 
-const getItemKey = (dayIndex: number, exerciseIndex: number, itemIndex: number) =>
-  `${dayIndex}:${exerciseIndex}:${itemIndex}`;
+const getItemKey = (
+  weekIndex: number,
+  dayIndex: number,
+  exerciseIndex: number,
+  itemIndex: number
+) => `${weekIndex}:${dayIndex}:${exerciseIndex}:${itemIndex}`;
 
 const readOverrideMap = (userId: string, plan: WorkoutPlan): WorkoutOverrideMap => {
   if (typeof window === 'undefined') return {};
@@ -48,12 +52,13 @@ const writeOverrideMap = (userId: string, plan: WorkoutPlan, value: WorkoutOverr
 const applyOverrideToExercise = (
   exercise: Exercise,
   overrides: WorkoutOverrideMap,
+  weekIndex: number,
   dayIndex: number,
   exerciseIndex: number
 ): Exercise => {
   if (exercise.items?.length) {
     const nextItems = exercise.items.map((item, itemIndex) => {
-      const override = overrides[getItemKey(dayIndex, exerciseIndex, itemIndex)];
+      const override = overrides[getItemKey(weekIndex, dayIndex, exerciseIndex, itemIndex)];
       if (!override) return item;
 
       return {
@@ -72,7 +77,7 @@ const applyOverrideToExercise = (
     };
   }
 
-  const override = overrides[getItemKey(dayIndex, exerciseIndex, 0)];
+  const override = overrides[getItemKey(weekIndex, dayIndex, exerciseIndex, 0)];
   if (!override) return exercise;
 
   return {
@@ -90,11 +95,14 @@ export const applyWorkoutPlanOverrides = (userId: string, plan: WorkoutPlan | nu
 
   return {
     ...plan,
-    days: plan.days.map((day, dayIndex) => ({
-      ...day,
-      exercises: day.exercises.map((exercise, exerciseIndex) =>
-        applyOverrideToExercise(exercise, overrides, dayIndex, exerciseIndex)
-      ),
+    weeks: plan.weeks.map((week, weekIndex) => ({
+      ...week,
+      days: week.days.map((day, dayIndex) => ({
+        ...day,
+        exercises: day.exercises.map((exercise, exerciseIndex) =>
+          applyOverrideToExercise(exercise, overrides, weekIndex, dayIndex, exerciseIndex)
+        ),
+      })),
     })),
   };
 };
@@ -102,6 +110,7 @@ export const applyWorkoutPlanOverrides = (userId: string, plan: WorkoutPlan | nu
 export const saveWorkoutExerciseOverrides = (
   userId: string,
   plan: WorkoutPlan,
+  weekIndex: number,
   dayIndex: number,
   exerciseIndex: number,
   items: WorkoutOverrideEntry[]
@@ -109,7 +118,7 @@ export const saveWorkoutExerciseOverrides = (
   const overrides = readOverrideMap(userId, plan);
 
   items.forEach((item, itemIndex) => {
-    const key = getItemKey(dayIndex, exerciseIndex, itemIndex);
+    const key = getItemKey(weekIndex, dayIndex, exerciseIndex, itemIndex);
     const normalizedLoad = item.targetLoad.trim();
     const normalizedUnit = item.targetLoadUnit === 'lb' ? 'lb' : 'kg';
 

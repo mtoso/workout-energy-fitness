@@ -1,12 +1,14 @@
 import { ChevronRight, Clock, Play, Star } from 'lucide-react';
 import { useMemo } from 'react';
-import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary } from '../../types/workout';
+import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary, WorkoutWeek } from '../../types/workout';
 
 interface SchedaScreenProps {
   plan: WorkoutPlan | null;
   plans: WorkoutPlanSummary[];
   selectedPlanId: string | null;
+  activeWeekId: string | null;
   onPlanSelect: (planId: string) => void;
+  onActiveWeekChange: (weekId: string) => void;
   onSetPreferred: (planId: string) => void;
   isSettingPreferred: boolean;
   onExerciseSelect: (day: WorkoutDay, ex: Exercise) => void;
@@ -40,7 +42,9 @@ export const SchedaScreen = ({
   plan,
   plans,
   selectedPlanId,
+  activeWeekId,
   onPlanSelect,
+  onActiveWeekChange,
   onSetPreferred,
   isSettingPreferred,
   onExerciseSelect,
@@ -49,15 +53,21 @@ export const SchedaScreen = ({
   activeDayId,
   onActiveDayChange,
 }: SchedaScreenProps) => {
+  const activeWeek = useMemo<WorkoutWeek | null>(() => {
+    if (!plan || plan.weeks.length === 0) return null;
+
+    return plan.weeks.find((week) => week.id === activeWeekId) ?? plan.weeks[0];
+  }, [activeWeekId, plan]);
+
   const activeDay = useMemo(() => {
-    if (!plan || plan.days.length === 0) return null;
+    if (!activeWeek || activeWeek.days.length === 0) return null;
 
     const activeDayIdx = Math.max(
       0,
-      plan.days.findIndex((day) => day.id === activeDayId)
+      activeWeek.days.findIndex((day) => day.id === activeDayId)
     );
-    return plan.days[activeDayIdx];
-  }, [activeDayId, plan]);
+    return activeWeek.days[activeDayIdx];
+  }, [activeDayId, activeWeek]);
 
   if (!plan) {
     return (
@@ -159,26 +169,49 @@ export const SchedaScreen = ({
         </section>
 
         <section className="space-y-4">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {plan.days.map((day) => (
-              <button
-                key={`tab-${day.id}`}
-                onClick={() => onActiveDayChange(day.id)}
-                className={`whitespace-nowrap px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
-                  activeDay?.id === day.id
-                    ? 'bg-zinc-900 text-white shadow-md'
-                    : 'bg-white text-zinc-500 hover:bg-zinc-100 border border-zinc-200'
-                }`}
-              >
-                {day.name}
-              </button>
-            ))}
+          <div className="space-y-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {plan.weeks.map((week, index) => (
+                <button
+                  key={week.id}
+                  onClick={() => onActiveWeekChange(week.id)}
+                  className={`whitespace-nowrap px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                    activeWeek?.id === week.id
+                      ? 'bg-zinc-900 text-white shadow-md'
+                      : 'bg-white text-zinc-500 hover:bg-zinc-100 border border-zinc-200'
+                  }`}
+                >
+                  {week.name || `Settimana ${index + 1}`}
+                </button>
+              ))}
+            </div>
+
+            {activeWeek ? (
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                {activeWeek.days.map((day) => (
+                  <button
+                    key={`tab-${day.id}`}
+                    onClick={() => onActiveDayChange(day.id)}
+                    className={`whitespace-nowrap px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+                      activeDay?.id === day.id
+                        ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                        : 'bg-white text-zinc-500 hover:bg-zinc-100 border border-zinc-200'
+                    }`}
+                  >
+                    {day.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {activeDay ? (
             <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
               <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400">
+                    {activeWeek?.name ?? 'Settimana'}
+                  </p>
                   <h3 className="truncate text-2xl font-black tracking-tight text-zinc-900">
                     {activeDay.name}
                   </h3>
