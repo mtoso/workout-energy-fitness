@@ -19,17 +19,20 @@ export const ProfileScreen = ({
 
   return (
     <div className="flex-1 bg-zinc-50 pb-24 overflow-y-auto min-h-0">
-      <div className="px-6 pt-16 pb-8 bg-white rounded-b-[2rem] shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight mb-1">
+      <div className="rounded-b-[2rem] bg-white px-6 pb-8 pt-16 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">
+              Profilo
+            </p>
+            <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900">
               I tuoi Progressi
             </h1>
-            <p className="text-sm text-zinc-500">{userEmail}</p>
+            <p className="truncate text-sm text-zinc-500">{userEmail}</p>
           </div>
           <button
             onClick={onLogout}
-            className="shrink-0 text-zinc-700 bg-zinc-100 hover:bg-zinc-200 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 active:scale-[0.98] transition"
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-200 active:scale-[0.98]"
           >
             <LogOut size={16} /> Esci
           </button>
@@ -38,70 +41,64 @@ export const ProfileScreen = ({
         {showAdminEntry && onOpenAdmin && (
           <button
             onClick={onOpenAdmin}
-            className="mb-6 w-full bg-amber-100 text-amber-900 px-4 py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition"
+            className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-900 transition active:scale-[0.98]"
           >
             <Shield size={16} /> Apri Backoffice
           </button>
         )}
 
         <div className="flex gap-4">
-          <div className="flex-1 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex-1 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-zinc-500">
               Peso Attuale
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-zinc-900 tracking-tight">
-                {currentStat.weight}
-              </span>
+              <span className="text-3xl font-bold tracking-tight text-zinc-900">{currentStat.weight}</span>
               <span className="text-zinc-500 font-medium">kg</span>
             </div>
           </div>
-          <div className="flex-1 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
-            <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">
+          <div className="flex-1 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-zinc-500">
               Massa Grassa
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-zinc-900 tracking-tight">
-                {currentStat.fat}
-              </span>
+              <span className="text-3xl font-bold tracking-tight text-zinc-900">{currentStat.fat}</span>
               <span className="text-zinc-500 font-medium">%</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-6 mt-8">
-        <h2 className="text-lg font-bold text-zinc-900 mb-4 px-1">Trend Peso</h2>
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-zinc-100 mb-8 h-48 flex items-center justify-center">
+      <div className="mt-6 px-6">
+        <h2 className="mb-4 px-1 text-lg font-bold text-zinc-900">Trend Peso</h2>
+        <div className="mb-8 flex h-48 items-center justify-center rounded-3xl border border-zinc-100 bg-white p-6 shadow-sm">
           <ProgressChart data={WEIGHT_HISTORY} />
         </div>
 
-        <div className="flex items-center justify-between mb-4 px-1">
+        <div className="mb-4 flex items-center justify-between gap-3 px-1">
           <h2 className="text-lg font-bold text-zinc-900">Storico Check</h2>
-          <button className="text-emerald-600 font-semibold text-sm flex items-center bg-emerald-50 px-3 py-1.5 rounded-lg active:scale-95 transition">
+          <button className="flex items-center rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-600 transition active:scale-95">
             <Plus size={16} className="mr-1" /> Nuovo
           </button>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-zinc-100 overflow-hidden">
+        <div className="overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
           {[...WEIGHT_HISTORY].reverse().map((record, i, arr) => (
             <div
               key={`hist-${record.id}`}
-              className={`flex items-center justify-between p-5 ${
+              className={`flex items-center justify-between gap-4 p-5 ${
                 i !== arr.length - 1 ? 'border-b border-zinc-50' : ''
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center text-zinc-400">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-50 text-zinc-400">
                   <Calendar size={18} />
                 </div>
                 <span className="font-semibold text-zinc-900">{record.date}</span>
               </div>
-              <div className="text-right">
+              <div className="shrink-0 text-right">
                 <p className="font-bold text-zinc-900">{record.weight} kg</p>
-                <p className="text-xs text-zinc-400 font-medium">
-                  {record.fat}% MG
-                </p>
+                <p className="text-xs font-medium text-zinc-400">{record.fat}% MG</p>
               </div>
             </div>
           ))}
