@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ChevronLeft, Copy, FileText, Link2, Plus, RefreshCw, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
+import { ChevronLeft, Copy, FileText, Plus, RefreshCw, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
 import { AdminShell } from '../components/admin/AdminShell';
 import { isApiError } from '../lib/api/client';
 import {
@@ -277,32 +277,60 @@ export const AdminUserDetailPage = () => {
                       {statusLabel(detailQuery.data.user.status)}
                     </span>
                   </div>
-                </div>
+                  {canManageAccountAccess || (isAdmin && isInvitedUser && !isPersonalView) ? (
+                    <div className="mt-5 space-y-3 border-t border-zinc-100 pt-5 text-left">
+                      {canManageAccountAccess ? (
+                        <>
+                          <p className="text-sm text-zinc-500">
+                            {detailQuery.data.user.status === 'active'
+                              ? 'Disabilita temporaneamente l’accesso senza eliminare dati o cronologia.'
+                              : 'Riattiva l’accesso per permettere di nuovo il login all’utente.'}
+                          </p>
+                          <button
+                            onClick={() => setIsStatusModalOpen(true)}
+                            disabled={updateStatusMutation.isPending}
+                            className={`w-full px-4 py-3 rounded-2xl font-semibold transition ${
+                              detailQuery.data.user.status === 'active'
+                                ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                                : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                            } disabled:opacity-50`}
+                          >
+                            {statusActionLabel}
+                          </button>
+                        </>
+                      ) : null}
 
-                <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
-                  <h3 className="font-bold text-zinc-900">Dettagli gestione</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
-                      <span className="text-zinc-500">Creato il</span>
-                      <span className="font-bold text-zinc-900 text-right">
-                        {formatDate(detailQuery.data.user.createdAt)}
-                      </span>
+                      {isAdmin && isInvitedUser && !isPersonalView ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-zinc-500">
+                            Questo utente è ancora invitato. Il link resta valido finché non viene usato o rigenerato.
+                          </p>
+                          {generatedInviteUrl ? (
+                            <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
+                              <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                                Ultimo link generato
+                              </p>
+                              <p className="text-sm font-medium text-zinc-900 break-all">{generatedInviteUrl}</p>
+                              <button
+                                onClick={() => void navigator.clipboard.writeText(generatedInviteUrl)}
+                                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 underline"
+                              >
+                                <Copy size={14} /> Copia link
+                              </button>
+                            </div>
+                          ) : null}
+                          <button
+                            onClick={() => regenerateInviteMutation.mutate()}
+                            disabled={regenerateInviteMutation.isPending}
+                            className="w-full px-4 py-3 rounded-2xl font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                          >
+                            <RefreshCw size={16} className={regenerateInviteMutation.isPending ? 'animate-spin' : ''} />
+                            {regenerateInviteMutation.isPending ? 'Rigenerazione...' : 'Rigenera link'}
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
-                      <span className="text-zinc-500">Ultimo login</span>
-                      <span className="font-bold text-zinc-900 text-right">
-                        {formatDateTime(detailQuery.data.user.lastLoginAt)}
-                      </span>
-                    </div>
-                    {detailQuery.data.user.status === 'invited' && detailQuery.data.user.inviteExpiresAt && (
-                      <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
-                        <span className="text-zinc-500">Scadenza invito</span>
-                        <span className="font-bold text-zinc-900 text-right">
-                          {formatDateTime(detailQuery.data.user.inviteExpiresAt)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  ) : null}
                 </div>
 
                 {canAssignCoach && (
@@ -338,79 +366,6 @@ export const AdminUserDetailPage = () => {
                     )}
                   </div>
                 )}
-
-                {isAdmin && isInvitedUser && !isPersonalView ? (
-                  <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2 text-zinc-900 font-bold">
-                      <Link2 size={18} /> Invito accesso
-                    </div>
-                    <p className="text-sm text-zinc-500">
-                      Questo utente è ancora invitato. Il link resta valido finché non viene usato o rigenerato.
-                    </p>
-                    {generatedInviteUrl ? (
-                      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                          Ultimo link generato
-                        </p>
-                        <p className="text-sm font-medium text-zinc-900 break-all">{generatedInviteUrl}</p>
-                        <button
-                          onClick={() => void navigator.clipboard.writeText(generatedInviteUrl)}
-                          className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 underline"
-                        >
-                          <Copy size={14} /> Copia link
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-zinc-500">
-                        Per ottenere un link condivisibile, rigenera l&apos;invito da questa scheda.
-                      </p>
-                    )}
-                    <button
-                      onClick={() => regenerateInviteMutation.mutate()}
-                      disabled={regenerateInviteMutation.isPending}
-                      className="w-full px-4 py-3 rounded-2xl font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
-                    >
-                      <RefreshCw size={16} className={regenerateInviteMutation.isPending ? 'animate-spin' : ''} />
-                      {regenerateInviteMutation.isPending ? 'Rigenerazione...' : 'Rigenera link'}
-                    </button>
-                  </div>
-                ) : null}
-
-                {canManageAccountAccess && detailQuery.data ? (
-                  <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
-                    <div className="flex items-center gap-2 text-zinc-900 font-bold">
-                      <Shield size={18} /> Accesso account
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm text-zinc-500">Stato attuale</p>
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                          detailQuery.data.user.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-800'
-                            : 'bg-red-50 text-red-700'
-                        }`}
-                      >
-                        {statusLabel(detailQuery.data.user.status)}
-                      </span>
-                      <p className="text-sm text-zinc-500 pt-1">
-                        {detailQuery.data.user.status === 'active'
-                          ? 'Disabilita temporaneamente l’accesso senza eliminare dati o cronologia.'
-                          : 'Riattiva l’accesso per permettere di nuovo il login all’utente.'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setIsStatusModalOpen(true)}
-                      disabled={updateStatusMutation.isPending}
-                      className={`w-full px-4 py-3 rounded-2xl font-semibold transition ${
-                        detailQuery.data.user.status === 'active'
-                          ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
-                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-                      } disabled:opacity-50`}
-                    >
-                      {statusActionLabel}
-                    </button>
-                  </div>
-                ) : null}
               </div>
 
               <div className="space-y-6">
