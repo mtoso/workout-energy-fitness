@@ -10,8 +10,11 @@ export type AdminSection = 'users' | 'personal';
 interface AdminShellProps {
   section: AdminSection;
   title: string;
+  eyebrow?: string;
+  contextLabel?: string;
   subtitle?: string;
   actions?: ReactNode;
+  leading?: ReactNode;
   onLogout: () => void;
   children: ReactNode;
   hideMobileNavigation?: boolean;
@@ -50,8 +53,11 @@ const getStatusLabel = (status: 'invited' | 'active' | 'disabled') => {
 export const AdminShell = ({
   section,
   title,
+  eyebrow,
+  contextLabel,
   subtitle,
   actions,
+  leading,
   onLogout,
   children,
   hideMobileNavigation = false,
@@ -156,29 +162,31 @@ export const AdminShell = ({
       </aside>
 
       <main className="flex-1 min-w-0">
-        <div className="md:hidden sticky top-0 z-30 bg-zinc-950 text-white px-4 py-4 border-b border-zinc-800 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shadow-sm shrink-0">
-                <img
-                  src={defaultProfileLogo}
-                  alt="EnergyFit"
-                  className="h-full w-full object-cover"
-                />
+        <div className="md:hidden sticky top-0 z-30 bg-zinc-950 text-white border-b border-zinc-800 shadow-sm">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white overflow-hidden shadow-sm shrink-0">
+                  <img
+                    src={defaultProfileLogo}
+                    alt="EnergyFit"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-zinc-500 font-semibold">
+                    Backoffice
+                  </p>
+                  <h1 className="text-lg font-bold tracking-tight leading-none truncate">EnergyFit Pro</h1>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 font-semibold">
-                  Backoffice
-                </p>
-                <h1 className="text-lg font-bold tracking-tight truncate">EnergyFit Pro</h1>
-              </div>
+              <button
+                onClick={onLogout}
+                className="bg-white/10 px-3 py-2 rounded-xl text-sm font-semibold shrink-0"
+              >
+                Esci
+              </button>
             </div>
-            <button
-              onClick={onLogout}
-              className="bg-white/10 px-3 py-2 rounded-xl text-sm font-semibold shrink-0"
-            >
-              Esci
-            </button>
           </div>
         </div>
 
@@ -188,20 +196,44 @@ export const AdminShell = ({
           } ${contentClassName ?? ''}`}
         >
           {!hideHeader ? (
-            <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight">{title}</h1>
-                {subtitle && <p className="text-sm md:text-base text-zinc-500 mt-1">{subtitle}</p>}
-              </div>
-              {actions ? (
-                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                  {actions}
+            <section className="-mx-4 -mt-6 sticky top-[65px] z-20 border-b border-zinc-200 bg-white md:static md:-mx-8 md:-mt-8">
+              <div className="flex flex-col gap-5 px-6 py-6 md:px-8 md:py-7 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex min-w-0 items-start gap-4 md:gap-5">
+                  {leading ? <div className="shrink-0">{leading}</div> : null}
+                  <div className="min-w-0">
+                    {eyebrow || contextLabel ? (
+                      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-zinc-400 md:text-xs">
+                        {eyebrow ? <span className="text-emerald-600">{eyebrow}</span> : null}
+                        {eyebrow && contextLabel ? (
+                          <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                        ) : null}
+                        {contextLabel ? (
+                          <span className="truncate normal-case tracking-normal text-sm font-bold text-zinc-500 md:text-base">
+                            {contextLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <h1 className="mt-1 text-3xl font-black tracking-tight text-zinc-900 md:text-[3rem]">
+                      {title}
+                    </h1>
+                    {subtitle ? (
+                      <p className="mt-2 max-w-3xl text-sm md:text-base text-zinc-500">{subtitle}</p>
+                    ) : null}
+                  </div>
                 </div>
-              ) : null}
-            </header>
+                {actions ? (
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 w-full xl:w-auto xl:justify-end">
+                    {actions}
+                  </div>
+                ) : null}
+              </div>
+            </section>
           ) : null}
 
-          {children}
+          <div className={!hideHeader ? 'pt-2 md:pt-4' : undefined}>
+            {children}
+          </div>
         </div>
       </main>
 

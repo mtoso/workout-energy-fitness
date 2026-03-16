@@ -141,15 +141,16 @@ export const AdminUserDetailPage = () => {
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
   const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
   const section = isPersonalView ? 'personal' : 'users';
-  const title = isPersonalView
-    ? 'Le mie schede'
+  const title = user?.fullName ?? (isPersonalView ? 'Il mio profilo' : 'Profilo utente');
+  const eyebrow = isPersonalView
+    ? 'Area personale'
     : user?.userType === 'coach'
       ? 'Profilo coach'
       : 'Profilo cliente';
   const subtitle = user
     ? isPersonalView
-      ? 'Gestisci la tua scheda personale, lo storico check-in e le diverse versioni della scheda.'
-      : `Profilo di ${user.fullName} con storico schede, check-in e assegnazione del coach.`
+      ? 'Scheda personale, storico check-in e versioni salvate.'
+      : 'Schede, check-in e assegnazione del coach dell’utente selezionato.'
     : 'Gestione completa del profilo selezionato.';
 
   return (
@@ -157,7 +158,19 @@ export const AdminUserDetailPage = () => {
       <AdminShell
         section={section}
         title={title}
+        eyebrow={eyebrow}
         subtitle={subtitle}
+        leading={
+          !isPersonalView ? (
+            <Link
+              to="/admin/users"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-200"
+              aria-label="Torna utenti"
+            >
+              <ChevronLeft size={22} />
+            </Link>
+          ) : undefined
+        }
         onLogout={handleLogout}
       >
         {detailQuery.isLoading || (isAdmin && coachesQuery.isLoading) ? (
@@ -174,18 +187,6 @@ export const AdminUserDetailPage = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {!isPersonalView ? (
-              <div>
-                <Link
-                  to="/admin/users"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600 hover:text-zinc-900"
-                >
-                  <ChevronLeft size={16} />
-                  Torna utenti
-                </Link>
-              </div>
-            ) : null}
-
             {generalError && (
               <div className="rounded-2xl px-4 py-3 text-sm font-medium bg-red-100 text-red-700 border border-red-200">
                 {generalError}

@@ -102,14 +102,15 @@ export const AdminUsersPage = () => {
 
   const pageTitle = isAdmin ? 'Utenti' : 'I tuoi clienti';
   const pageSubtitle = isAdmin
-    ? 'Lista unificata di coach e clienti. Crea utenti invitati e filtra per coach, tipo o stato.'
-    : 'Clienti assegnati al tuo profilo coach. Apri il loro profilo e gestisci schede e check-in.';
+    ? 'Coach e clienti in un unico elenco. Filtra, invita e apri i profili.'
+    : 'Apri i profili assegnati al tuo account coach e gestisci schede e check-in.';
 
   return (
     <>
       <AdminShell
         section="users"
         title={pageTitle}
+        eyebrow={isAdmin ? 'Backoffice' : 'Area coach'}
         subtitle={pageSubtitle}
         onLogout={handleLogout}
         actions={

@@ -160,7 +160,7 @@ const AdminWorkoutEditorView = ({
 
   return (
     <div className="w-full space-y-0">
-      <section className="border-b border-zinc-200 bg-white">
+      <section className="sticky top-[65px] z-20 border-b border-zinc-200 bg-white md:static">
         <div className="flex flex-col gap-5 px-6 py-6 md:px-8 md:py-7 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 items-center gap-4 md:gap-5">
             <Link
