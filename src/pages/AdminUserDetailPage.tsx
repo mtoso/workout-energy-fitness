@@ -140,6 +140,9 @@ export const AdminUserDetailPage = () => {
   const user = detailQuery.data?.user;
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
   const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
+  const showSummaryCards = Boolean(
+    detailQuery.data && (isPersonalView || detailQuery.data.user.userType === 'coach')
+  );
   const section = isPersonalView ? 'personal' : 'users';
   const title = user?.fullName ?? (isPersonalView ? 'Il mio profilo' : 'Profilo utente');
   const eyebrow = isPersonalView
@@ -292,43 +295,45 @@ export const AdminUserDetailPage = () => {
               </div>
 
               <div className="space-y-6">
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className={summaryCardClass}>
-                    <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
-                      <FileText size={16} /> Versioni scheda
+                {showSummaryCards ? (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className={summaryCardClass}>
+                      <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
+                        <FileText size={16} /> Versioni scheda
+                      </div>
+                      <p className="text-3xl font-bold text-zinc-900 tracking-tight">
+                        {detailQuery.data.workouts.length}
+                      </p>
                     </div>
-                    <p className="text-3xl font-bold text-zinc-900 tracking-tight">
-                      {detailQuery.data.workouts.length}
-                    </p>
-                  </div>
-                  <div className={summaryCardClass}>
-                    <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
-                      <Scale size={16} /> Ultimo check-in
+                    <div className={summaryCardClass}>
+                      <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
+                        <Scale size={16} /> Ultimo check-in
+                      </div>
+                      <p className="text-3xl font-bold text-zinc-900 tracking-tight">
+                        {latestCheck ? `${latestCheck.weight}` : '-'}
+                      </p>
+                      <p className="text-sm text-zinc-500 mt-2">
+                        {latestCheck?.fat !== null && latestCheck?.fat !== undefined
+                          ? `MG ${latestCheck.fat}%`
+                          : 'Senza massa grassa'}
+                      </p>
                     </div>
-                    <p className="text-3xl font-bold text-zinc-900 tracking-tight">
-                      {latestCheck ? `${latestCheck.weight}` : '-'}
-                    </p>
-                    <p className="text-sm text-zinc-500 mt-2">
-                      {latestCheck?.fat !== null && latestCheck?.fat !== undefined
-                        ? `MG ${latestCheck.fat}%`
-                        : 'Senza massa grassa'}
-                    </p>
-                  </div>
-                  <div className={summaryCardClass}>
-                    <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
-                      {detailQuery.data.user.isAdmin ? <Shield size={16} /> : <UserCircle size={16} />}
-                      Profilo
+                    <div className={summaryCardClass}>
+                      <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
+                        {detailQuery.data.user.isAdmin ? <Shield size={16} /> : <UserCircle size={16} />}
+                        Profilo
+                      </div>
+                      <p className="text-xl font-bold text-zinc-900 tracking-tight">
+                        {detailQuery.data.user.isAdmin ? 'Admin' : userTypeLabel(detailQuery.data.user.userType)}
+                      </p>
+                      <p className="text-sm text-zinc-500 mt-2">
+                        {detailQuery.data.user.userType === 'coach'
+                          ? 'Può gestire clienti assegnati e usare la propria app personale.'
+                          : 'Usa l’app personale e riceve le schede assegnate.'}
+                      </p>
                     </div>
-                    <p className="text-xl font-bold text-zinc-900 tracking-tight">
-                      {detailQuery.data.user.isAdmin ? 'Admin' : userTypeLabel(detailQuery.data.user.userType)}
-                    </p>
-                    <p className="text-sm text-zinc-500 mt-2">
-                      {detailQuery.data.user.userType === 'coach'
-                        ? 'Può gestire clienti assegnati e usare la propria app personale.'
-                        : 'Usa l’app personale e riceve le schede assegnate.'}
-                    </p>
                   </div>
-                </div>
+                ) : null}
 
                 <div className="bg-white rounded-[2rem] border border-zinc-200 shadow-sm p-5 md:p-6 space-y-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
