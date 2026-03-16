@@ -5,6 +5,7 @@ export {
   createBodyCheckin,
   getManagedUserDetail,
   listCoaches,
+  regenerateInviteForUser,
   updateManagedUserStatus,
 } from '../../../_lib/admin-users';
 export { fail, json } from '../../../_lib/response';

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Plus, Search, UserCircle, Users } from 'lucide-react';
+import { Copy, Plus, QrCode, Search, UserCircle, Users } from 'lucide-react';
 import { AdminInviteModal } from '../components/admin/AdminInviteModal';
+import { AdminJoinQrModal } from '../components/admin/AdminJoinQrModal';
 import { AdminShell } from '../components/admin/AdminShell';
 import { AdminUsersTable } from '../components/admin/AdminUsersTable';
 import { isApiError } from '../lib/api/client';
@@ -40,10 +41,10 @@ export const AdminUsersPage = () => {
   const [userFullName, setUserFullName] = useState('');
   const [userType, setUserType] = useState<UserType>('client');
   const [inviteCoachUserId, setInviteCoachUserId] = useState<string | null>(null);
-  const [inviteExpiry, setInviteExpiry] = useState(72);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [createdInvite, setCreatedInvite] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isJoinQrModalOpen, setIsJoinQrModalOpen] = useState(false);
 
   const createUserMutation = useMutation({
     mutationFn: createAdminUser,
@@ -104,6 +105,7 @@ export const AdminUsersPage = () => {
   const pageSubtitle = isAdmin
     ? 'Coach e clienti in un unico elenco. Filtra, invita e apri i profili.'
     : 'Apri i profili assegnati al tuo account coach e gestisci schede e check-in.';
+  const joinUrl = useMemo(() => `${window.location.origin.replace(/\/$/, '')}/join`, []);
 
   return (
     <>
@@ -146,6 +148,32 @@ export const AdminUsersPage = () => {
             <p className="text-3xl font-bold text-zinc-900 tracking-tight">{visibleInvited}</p>
           </div>
         </div>
+
+        {isAdmin ? (
+          <div className="bg-white border border-zinc-200 rounded-[2rem] p-5 md:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-zinc-900">Registrazione palestra</h2>
+              <p className="text-zinc-500 mt-1">
+                Link pubblico per nuovi clienti che si iscrivono in autonomia da QR o link condiviso.
+              </p>
+              <p className="text-sm text-zinc-400 mt-3 break-all">{joinUrl}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => void navigator.clipboard.writeText(joinUrl)}
+                className="px-4 py-2.5 rounded-2xl font-semibold bg-zinc-100 text-zinc-900 inline-flex items-center justify-center gap-2"
+              >
+                <Copy size={16} /> Copia link iscrizione
+              </button>
+              <button
+                onClick={() => setIsJoinQrModalOpen(true)}
+                className="px-4 py-2.5 rounded-2xl font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 inline-flex items-center justify-center gap-2"
+              >
+                <QrCode size={16} /> Mostra QR
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="bg-white border border-zinc-200 rounded-[2rem] p-4 md:p-5 shadow-sm space-y-4">
           <div className="relative max-w-md">
@@ -244,7 +272,6 @@ export const AdminUsersPage = () => {
           fullName={userFullName}
           email={userEmail}
           coachUserId={inviteCoachUserId}
-          expiresInHours={inviteExpiry}
           error={inviteError}
           inviteUrl={createdInvite}
           isPending={createUserMutation.isPending}
@@ -259,7 +286,6 @@ export const AdminUsersPage = () => {
           onFullNameChange={setUserFullName}
           onEmailChange={setUserEmail}
           onCoachUserIdChange={setInviteCoachUserId}
-          onExpiryChange={setInviteExpiry}
           onSubmit={() => {
             setInviteError(null);
             setCreatedInvite(null);
@@ -268,11 +294,18 @@ export const AdminUsersPage = () => {
               fullName: userFullName,
               userType,
               coachUserId: userType === 'client' ? inviteCoachUserId : null,
-              expiresInHours: inviteExpiry,
             });
           }}
         />
       )}
+
+      {isAdmin ? (
+        <AdminJoinQrModal
+          isOpen={isJoinQrModalOpen}
+          joinUrl={joinUrl}
+          onClose={() => setIsJoinQrModalOpen(false)}
+        />
+      ) : null}
     </>
   );
 };

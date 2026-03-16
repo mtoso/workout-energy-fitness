@@ -21,7 +21,7 @@ export const signupWithGoogle = async (request: Request, env: Env) => {
 
   const invitedUser = await findInvitedUserByToken(env, inviteToken);
   if (!invitedUser) {
-    return fail(400, 'invalid_invite', "L'invito non è valido, è scaduto oppure è già stato utilizzato.");
+    return fail(400, 'invalid_invite', "L'invito non è valido oppure è già stato utilizzato.");
   }
 
   const identityOrResponse = await verifyGoogleToken(bodyOrResponse.idToken, env);

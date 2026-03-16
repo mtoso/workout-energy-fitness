@@ -24,7 +24,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
   const invitedUser = await findInvitedUserByToken(env, inviteToken);
   if (!invitedUser) {
-    return fail(400, 'invalid_invite', "L'invito non è valido, è scaduto oppure è già stato utilizzato.");
+    return fail(400, 'invalid_invite', "L'invito non è valido oppure è già stato utilizzato.");
   }
 
   const activated = await activateInvitedUser(

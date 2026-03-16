@@ -8,7 +8,6 @@ interface AdminInviteModalProps {
   fullName: string;
   email: string;
   coachUserId: string | null;
-  expiresInHours: number;
   error: string | null;
   inviteUrl: string | null;
   isPending: boolean;
@@ -18,7 +17,6 @@ interface AdminInviteModalProps {
   onFullNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onCoachUserIdChange: (value: string | null) => void;
-  onExpiryChange: (value: number) => void;
   onSubmit: () => void;
 }
 
@@ -28,7 +26,6 @@ export const AdminInviteModal = ({
   fullName,
   email,
   coachUserId,
-  expiresInHours,
   error,
   inviteUrl,
   isPending,
@@ -38,7 +35,6 @@ export const AdminInviteModal = ({
   onFullNameChange,
   onEmailChange,
   onCoachUserIdChange,
-  onExpiryChange,
   onSubmit,
 }: AdminInviteModalProps) => {
   if (!isOpen) return null;
@@ -58,7 +54,7 @@ export const AdminInviteModal = ({
               Crea utente invitato
             </h2>
             <p className="text-zinc-500 mt-1">
-              Il record utente viene creato subito con stato <span className="font-semibold">Invitato</span>.
+              Il record utente viene creato subito con stato <span className="font-semibold">Invitato</span> e il link viene condiviso manualmente.
             </p>
           </div>
           <button
@@ -140,22 +136,6 @@ export const AdminInviteModal = ({
               </select>
             </div>
           )}
-
-          <div>
-            <label htmlFor="invite-expiry-hours" className="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
-              Scadenza invito (ore)
-            </label>
-            <input
-              id="invite-expiry-hours"
-              name="expiresInHours"
-              type="number"
-              min={1}
-              max={720}
-              value={expiresInHours}
-              onChange={(event) => onExpiryChange(Number(event.target.value))}
-              className="w-full px-4 py-3 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
         </div>
 
         {error && (
@@ -168,6 +148,9 @@ export const AdminInviteModal = ({
           <div className="mt-5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-2xl px-4 py-4 space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Link generato</p>
             <p className="break-all text-sm font-medium text-zinc-900">{inviteUrl}</p>
+            <p className="text-sm text-zinc-500">
+              Il link non scade automaticamente. Se serve invalidarlo, rigeneralo dal profilo utente.
+            </p>
             <button
               onClick={() => void navigator.clipboard.writeText(inviteUrl)}
               className="inline-flex items-center gap-2 text-sm font-semibold underline"

@@ -10,6 +10,7 @@ import { meQueryOptions } from './lib/api/query-options';
 import { AppRoot } from './pages/AppRoot';
 import { LoginPage } from './pages/LoginPage';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { JoinPage } from './pages/JoinPage';
 import { UserAppPage } from './pages/UserAppPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminUserDetailPage } from './pages/AdminUserDetailPage';
@@ -66,6 +67,12 @@ const acceptInviteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/accept-invite',
   component: AcceptInvitePage,
+});
+
+const joinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/join',
+  component: JoinPage,
 });
 
 const homeRoute = createRoute({
@@ -138,6 +145,7 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   loginRoute,
   acceptInviteRoute,
+  joinRoute,
   adminRoute,
   adminUsersRoute,
   adminUserWorkoutRoute,

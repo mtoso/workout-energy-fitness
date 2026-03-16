@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ChevronLeft, FileText, Plus, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
+import { ChevronLeft, Copy, FileText, Link2, Plus, RefreshCw, Scale, Shield, UserCircle, Users, X } from 'lucide-react';
 import { AdminShell } from '../components/admin/AdminShell';
 import { isApiError } from '../lib/api/client';
 import {
@@ -13,6 +13,7 @@ import {
   assignAdminUserCoach,
   createAdminCheckin,
   createAdminUserWorkout,
+  regenerateAdminUserInvite,
   updateAdminUserStatus,
 } from '../lib/api/workout';
 import { queryClient } from '../lib/query-client';
@@ -84,6 +85,7 @@ export const AdminUserDetailPage = () => {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isAddWeightModalOpen, setIsAddWeightModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [weightDate, setWeightDate] = useState(toDateInputValue(new Date()));
   const [weightValue, setWeightValue] = useState('');
   const [fatValue, setFatValue] = useState('');
@@ -139,6 +141,19 @@ export const AdminUserDetailPage = () => {
     },
   });
 
+  const regenerateInviteMutation = useMutation({
+    mutationFn: () => regenerateAdminUserInvite(userId),
+    onSuccess: async (data) => {
+      setGeneralError(null);
+      setGeneratedInviteUrl(data.inviteUrl);
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'user-detail', userId] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (error) => {
+      setGeneralError(isApiError(error) ? error.message : "Rigenerazione dell'invito non riuscita.");
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: (status: 'active' | 'disabled') => updateAdminUserStatus(userId, status),
     onSuccess: async (detail) => {
@@ -159,6 +174,7 @@ export const AdminUserDetailPage = () => {
   const user = detailQuery.data?.user;
   const latestCheck = detailQuery.data?.checkins[0] ?? null;
   const canAssignCoach = Boolean(isAdmin && detailQuery.data?.user.userType === 'client');
+  const isInvitedUser = detailQuery.data?.user.status === 'invited';
   const canManageAccountAccess = Boolean(
     isAdmin &&
       detailQuery.data &&
@@ -278,7 +294,7 @@ export const AdminUserDetailPage = () => {
                         {formatDateTime(detailQuery.data.user.lastLoginAt)}
                       </span>
                     </div>
-                    {detailQuery.data.user.status === 'invited' && (
+                    {detailQuery.data.user.status === 'invited' && detailQuery.data.user.inviteExpiresAt && (
                       <div className="flex justify-between border-b border-zinc-100 pb-2 gap-3">
                         <span className="text-zinc-500">Scadenza invito</span>
                         <span className="font-bold text-zinc-900 text-right">
@@ -328,6 +344,43 @@ export const AdminUserDetailPage = () => {
                     )}
                   </div>
                 )}
+
+                {isAdmin && isInvitedUser && !isPersonalView ? (
+                  <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">
+                    <div className="flex items-center gap-2 text-zinc-900 font-bold">
+                      <Link2 size={18} /> Invito accesso
+                    </div>
+                    <p className="text-sm text-zinc-500">
+                      Questo utente è ancora invitato. Il link resta valido finché non viene usato o rigenerato.
+                    </p>
+                    {generatedInviteUrl ? (
+                      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                          Ultimo link generato
+                        </p>
+                        <p className="text-sm font-medium text-zinc-900 break-all">{generatedInviteUrl}</p>
+                        <button
+                          onClick={() => void navigator.clipboard.writeText(generatedInviteUrl)}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 underline"
+                        >
+                          <Copy size={14} /> Copia link
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-zinc-500">
+                        Per ottenere un link condivisibile, rigenera l&apos;invito da questa scheda.
+                      </p>
+                    )}
+                    <button
+                      onClick={() => regenerateInviteMutation.mutate()}
+                      disabled={regenerateInviteMutation.isPending}
+                      className="w-full px-4 py-3 rounded-2xl font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw size={16} className={regenerateInviteMutation.isPending ? 'animate-spin' : ''} />
+                      {regenerateInviteMutation.isPending ? 'Rigenerazione...' : 'Rigenera link'}
+                    </button>
+                  </div>
+                ) : null}
 
                 {canManageAccountAccess && detailQuery.data ? (
                   <div className="bg-white p-5 md:p-6 rounded-[2rem] border border-zinc-200 shadow-sm space-y-4">

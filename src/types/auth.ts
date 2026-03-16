@@ -13,3 +13,10 @@ export interface AuthUser {
   canManageClients: boolean;
   canUsePersonalApp: boolean;
 }
+
+export interface InviteMetadata {
+  valid: boolean;
+  email: string | null;
+  fullName: string | null;
+  userType: UserType | null;
+}

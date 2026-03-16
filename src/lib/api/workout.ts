@@ -22,7 +22,6 @@ export const createAdminUser = (payload: {
   fullName?: string;
   userType: UserType;
   coachUserId?: string | null;
-  expiresInHours: number;
 }) =>
   apiFetch<{
     user: AdminUserSummary;
@@ -47,6 +46,14 @@ export const updateAdminUserStatus = (userId: string, status: 'active' | 'disabl
     method: 'PUT',
     body: JSON.stringify({ status }),
   });
+
+export const regenerateAdminUserInvite = (userId: string) =>
+  apiFetch<{ userId: string; inviteUrl: string; expiresAt: string | null }>(
+    `/api/admin/users/${userId}/invite/regenerate`,
+    {
+      method: 'POST',
+    }
+  );
 
 export const createAdminCheckin = (
   userId: string,

@@ -14,7 +14,6 @@ interface CreateUserPayload {
   fullName?: string;
   userType?: UserType;
   coachUserId?: string | null;
-  expiresInHours?: number;
 }
 
 const buildInviteUrl = (request: Request, env: Env, inviteToken: string) => {
@@ -44,7 +43,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     userType,
     coachUserId: userType === 'client' ? bodyOrResponse.coachUserId ?? null : null,
     invitedByUserId: auth.user.id,
-    expiresInHours: bodyOrResponse.expiresInHours ?? 72,
   });
 
   if (createResult instanceof Response) return createResult;

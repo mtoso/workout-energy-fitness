@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getMe } from './auth';
+import { getInviteMetadata, getMe } from './auth';
 import {
   getAdminCoaches,
   getAdminUserDetail,
@@ -13,6 +13,15 @@ export const meQueryOptions = () =>
     queryFn: getMe,
     retry: false,
     staleTime: 60_000,
+  });
+
+export const inviteMetadataQueryOptions = (token: string) =>
+  queryOptions({
+    queryKey: ['auth', 'invite', token],
+    queryFn: () => getInviteMetadata(token),
+    enabled: Boolean(token.trim()),
+    staleTime: 30_000,
+    retry: false,
   });
 
 export const myWorkoutQueryOptions = () =>
