@@ -96,9 +96,9 @@ export const AdminUsersPage = () => {
     });
   }, [users, searchQuery, filterUserType, filterStatus, filterCoachUserId]);
 
-  const visibleClients = users.filter((user) => user.userType === 'client').length;
-  const visibleCoaches = users.filter((user) => user.userType === 'coach').length;
-  const visibleInvited = users.filter((user) => user.status === 'invited').length;
+  const visibleClients = filteredUsers.filter((user) => user.userType === 'client').length;
+  const visibleCoaches = filteredUsers.filter((user) => user.userType === 'coach').length;
+  const visibleInvited = filteredUsers.filter((user) => user.status === 'invited').length;
 
   const pageTitle = isAdmin ? 'Utenti' : 'I tuoi clienti';
   const pageSubtitle = isAdmin
@@ -129,7 +129,7 @@ export const AdminUsersPage = () => {
             <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">
               <Users size={16} /> Utenti visibili
             </div>
-            <p className="text-3xl font-bold text-zinc-900 tracking-tight">{users.length}</p>
+            <p className="text-3xl font-bold text-zinc-900 tracking-tight">{filteredUsers.length}</p>
           </div>
           <div className={statCardClass}>
             <div className="inline-flex items-center gap-2 text-zinc-500 text-sm mb-3">

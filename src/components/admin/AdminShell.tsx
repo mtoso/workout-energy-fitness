@@ -231,7 +231,7 @@ export const AdminShell = ({
             </section>
           ) : null}
 
-          <div className={!hideHeader ? 'pt-2 md:pt-4' : undefined}>
+          <div className={!hideHeader ? 'space-y-6 pt-2 md:pt-4' : undefined}>
             {children}
           </div>
         </div>

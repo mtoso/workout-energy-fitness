@@ -52,12 +52,12 @@ export const AdminUsersTable = ({ users, onOpenUser }: AdminUsersTableProps) => 
 
   return (
     <div className="bg-white rounded-[2rem] border border-zinc-200 overflow-hidden shadow-sm">
-      <div className="hidden lg:grid grid-cols-[minmax(0,1.7fr)_160px_180px_120px_110px] gap-4 px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 bg-zinc-50 border-b border-zinc-200">
+      <div className="hidden lg:grid grid-cols-[minmax(0,1.7fr)_160px_180px_120px_24px] gap-4 px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 bg-zinc-50 border-b border-zinc-200">
         <div>Utente</div>
         <div>Tipo</div>
         <div>Coach</div>
         <div>Creato</div>
-        <div className="text-right">Azione</div>
+        <div />
       </div>
 
       <div>
@@ -67,7 +67,7 @@ export const AdminUsersTable = ({ users, onOpenUser }: AdminUsersTableProps) => 
             onClick={() => onOpenUser(user.id)}
             className="w-full text-left px-5 md:px-6 py-4 border-b border-zinc-100 last:border-b-0 hover:bg-emerald-50/40 transition"
           >
-            <div className="lg:grid lg:grid-cols-[minmax(0,1.7fr)_160px_180px_120px_110px] lg:gap-4 items-center">
+            <div className="lg:grid lg:grid-cols-[minmax(0,1.7fr)_160px_180px_120px_24px] lg:gap-4 items-center">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 font-bold shrink-0">
                   {getInitials(user.fullName, user.email)}
@@ -118,9 +118,8 @@ export const AdminUsersTable = ({ users, onOpenUser }: AdminUsersTableProps) => 
                 {formatCreatedAt(user.createdAt)}
               </div>
 
-              <div className="mt-3 lg:mt-0 flex items-center justify-between lg:justify-end text-sm font-semibold text-zinc-700">
-                <span>{statusLabel(user.status)}</span>
-                <ChevronRight size={18} className="text-zinc-300 lg:ml-2" />
+              <div className="mt-3 lg:mt-0 flex items-center justify-end">
+                <ChevronRight size={18} className="text-zinc-300" />
               </div>
             </div>
           </button>
