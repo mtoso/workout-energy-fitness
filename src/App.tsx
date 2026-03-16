@@ -6,8 +6,8 @@ import { HomeScreen } from './components/screens/HomeScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
 import { SchedaScreen } from './components/screens/SchedaScreen';
 import { useScreenWakeLock } from './hooks/useScreenWakeLock';
-import { applyWorkoutPlanOverrides, saveWorkoutExerciseOverrides } from './lib/workout-overrides';
-import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary, WeightUnit, WorkoutWeek } from './types/workout';
+import { applyWorkoutPlanOverrides } from './lib/workout-overrides';
+import type { Exercise, WorkoutDay, WorkoutPlan, WorkoutPlanSummary, WorkoutWeek } from './types/workout';
 
 interface SelectedExerciseRef {
   dayId: number;
@@ -64,7 +64,6 @@ export default function App({
 }: WorkoutAppProps) {
   useScreenWakeLock(true);
 
-  const [overridesVersion, setOverridesVersion] = useState(0);
   const [selectedSchedaWeekId, setSelectedSchedaWeekId] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
     return window.localStorage.getItem(ACTIVE_SCHEDA_WEEK_STORAGE_KEY) ?? '';
@@ -81,18 +80,12 @@ export default function App({
   const [activeWorkoutData, setActiveWorkoutData] = useState<ActiveWorkoutData | null>(null);
 
   const effectivePreferredPlan = useMemo(
-    () => {
-      void overridesVersion;
-      return applyWorkoutPlanOverrides(userId, preferredPlan);
-    },
-    [userId, preferredPlan, overridesVersion]
+    () => applyWorkoutPlanOverrides(userId, preferredPlan),
+    [userId, preferredPlan]
   );
   const effectiveSelectedPlan = useMemo(
-    () => {
-      void overridesVersion;
-      return applyWorkoutPlanOverrides(userId, selectedPlan);
-    },
-    [userId, selectedPlan, overridesVersion]
+    () => applyWorkoutPlanOverrides(userId, selectedPlan),
+    [userId, selectedPlan]
   );
 
   const resolvedSelectedWeek = useMemo<WorkoutWeek | null>(() => {
@@ -148,31 +141,6 @@ export default function App({
 
     return { day, exercise };
   }, [effectiveSelectedPlan, selectedExerciseRef]);
-
-  const handleSaveTargetOverrides = useCallback(
-    (items: Array<{ targetLoad: string; targetLoadUnit: WeightUnit }>) => {
-      if (!effectiveSelectedPlan || !selectedExerciseRef) return;
-
-      const weekIndex = effectiveSelectedPlan.weeks.findIndex((week) =>
-        week.days.some((day) => day.id === selectedExerciseRef.dayId)
-      );
-      if (weekIndex < 0) return;
-
-      const dayIndex = effectiveSelectedPlan.weeks[weekIndex].days.findIndex(
-        (day) => day.id === selectedExerciseRef.dayId
-      );
-      if (dayIndex < 0) return;
-
-      const exerciseIndex = effectiveSelectedPlan.weeks[weekIndex].days[dayIndex].exercises.findIndex(
-        (exercise) => exercise.id === selectedExerciseRef.exerciseId
-      );
-      if (exerciseIndex < 0) return;
-
-      saveWorkoutExerciseOverrides(userId, effectiveSelectedPlan, weekIndex, dayIndex, exerciseIndex, items);
-      setOverridesVersion((current) => current + 1);
-    },
-    [effectiveSelectedPlan, selectedExerciseRef, userId]
-  );
 
   const markExerciseCompleted = useCallback((planId: string | null, dayId: number, exerciseId: string) => {
     const completionKey = getCompletionKey(planId, dayId);
@@ -265,7 +233,6 @@ export default function App({
           exercise={selectedExerciseData.exercise}
           onClose={() => setSelectedExerciseRef(null)}
           onStartWorkout={handleStartWorkout}
-          onSaveTargetOverrides={handleSaveTargetOverrides}
           onMarkExerciseCompleted={(dayId, exerciseId) =>
             markExerciseCompleted(effectiveSelectedPlan?.id ?? null, dayId, exerciseId)
           }
@@ -282,6 +249,8 @@ export default function App({
 
       {activeWorkoutData && (
         <ActiveWorkoutScreen
+          userId={userId}
+          planId={activeWorkoutData.planId}
           day={activeWorkoutData.day}
           initialExercise={activeWorkoutData.initialExercise}
           onClose={() => setActiveWorkoutData(null)}

@@ -1,14 +1,12 @@
 import { Check, ChevronLeft, Play, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import type { Exercise, WeightUnit, WorkoutDay } from '../../types/workout';
-import { getTargetForSet } from '../../utils/workout';
+import type { Exercise, WorkoutDay } from '../../types/workout';
 
 interface ExerciseDetailModalProps {
   day: WorkoutDay;
   exercise: Exercise;
   onClose: () => void;
   onStartWorkout: (day: WorkoutDay, ex: Exercise) => void;
-  onSaveTargetOverrides: (items: Array<{ targetLoad: string; targetLoadUnit: WeightUnit }>) => void;
   onMarkExerciseCompleted?: (dayId: number, exerciseId: string) => void;
   onMarkExerciseUncompleted?: (dayId: number, exerciseId: string) => void;
   isExerciseCompleted?: boolean;
@@ -19,56 +17,11 @@ export const ExerciseDetailModal = ({
   exercise,
   onClose,
   onStartWorkout,
-  onSaveTargetOverrides,
   onMarkExerciseCompleted,
   onMarkExerciseUncompleted,
   isExerciseCompleted = false,
 }: ExerciseDetailModalProps) => {
-  const [logs, setLogs] = useState<{ reps: string; weight: string }[]>(
-    Array.from({ length: exercise.sets }).map(() => ({ reps: '', weight: '' }))
-  );
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [targetItems, setTargetItems] = useState<Array<{ targetLoad: string; targetLoadUnit: WeightUnit }>>(() =>
-    exercise.items?.length
-      ? exercise.items.map((item) => ({
-          targetLoad: item.targetLoad ?? '',
-          targetLoadUnit: item.targetLoadUnit ?? 'kg',
-        }))
-      : [
-          {
-            targetLoad: exercise.targetLoad ?? '',
-            targetLoadUnit: exercise.targetLoadUnit ?? 'kg',
-          },
-        ]
-  );
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-
-  const updateLog = (
-    index: number,
-    field: 'reps' | 'weight',
-    value: string
-  ) => {
-    const newLogs = [...logs];
-    newLogs[index][field] = value;
-    setLogs(newLogs);
-  };
-
-  const updateTargetItem = (
-    index: number,
-    field: 'targetLoad' | 'targetLoadUnit',
-    value: string
-  ) => {
-    setTargetItems((current) =>
-      current.map((item, itemIndex) =>
-        itemIndex === index
-          ? {
-              ...item,
-              [field]: field === 'targetLoadUnit' ? (value === 'lb' ? 'lb' : 'kg') : value,
-            }
-          : item
-      )
-    );
-  };
 
   if (!exercise) return null;
 
@@ -106,113 +59,13 @@ export const ExerciseDetailModal = ({
           </div>
         </div>
 
-        <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-emerald-700">
-                Peso target
-              </h3>
-              <p className="mt-1 text-sm text-emerald-900">
-                Queste modifiche restano solo sul dispositivo e non cambiano la scheda del coach.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-3">
-            {targetItems.map((item, index) => (
-              <div key={`target-item-${index}`} className="grid grid-cols-[minmax(0,1fr)_96px] gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                    {exercise.items?.[index]?.name ?? 'Peso target'}
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={item.targetLoad}
-                    onChange={(event) => updateTargetItem(index, 'targetLoad', event.target.value)}
-                    placeholder="Es. 20"
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 font-semibold text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-zinc-500">
-                    Unità
-                  </label>
-                  <select
-                    value={item.targetLoadUnit}
-                    onChange={(event) => updateTargetItem(index, 'targetLoadUnit', event.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none"
-                  >
-                    <option value="kg">kg</option>
-                    <option value="lb">lb</option>
-                  </select>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <button
-              onClick={() => {
-                onSaveTargetOverrides(targetItems);
-                setSaveMessage('Peso salvato sul dispositivo.');
-              }}
-              className="rounded-2xl bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-zinc-800"
-            >
-              Salva sul dispositivo
-            </button>
-            {saveMessage ? <span className="text-sm font-medium text-emerald-700">{saveMessage}</span> : null}
-          </div>
-        </div>
-
-        <h3 className="font-bold text-zinc-900 mb-4 text-lg">
-          Registra Manualmente
-        </h3>
-        <div className="space-y-3">
-          {logs.map((log, i) => {
-            const setTarget = getTargetForSet(exercise.reps, i, exercise.sets);
-            const weightPlaceholder = targetItems[0]?.targetLoad
-              ? `${targetItems[0].targetLoad} ${targetItems[0].targetLoadUnit}`
-              : 'Peso';
-            return (
-              <div key={`log-${i}`} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center text-sm font-bold shrink-0">
-                  {i + 1}
-                </div>
-
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder={`Target: ${setTarget}`}
-                    value={log.reps}
-                    onChange={(e) => updateLog(i, 'reps', e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-center font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
-                  />
-                </div>
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder={weightPlaceholder}
-                    value={log.weight}
-                    onChange={(e) => updateLog(i, 'weight', e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-center font-bold text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-8">
-          <label className="font-bold text-zinc-900 mb-2 block text-sm">
-            Note
-          </label>
-          <textarea
-            placeholder="Sensazioni, fatica, etc..."
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors h-24 resize-none"
-          ></textarea>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-sm font-semibold text-zinc-900">
+            Ripetizioni, pesi e note si salvano nel workout attivo.
+          </p>
+          <p className="mt-1 text-sm text-zinc-500">
+            Apri l&apos;allenamento per annotare come è andata serie per serie.
+          </p>
         </div>
       </div>
 

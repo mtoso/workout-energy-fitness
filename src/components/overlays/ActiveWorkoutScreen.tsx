@@ -8,9 +8,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Exercise, WorkoutDay } from '../../types/workout';
+import { loadWorkoutSessionDrafts, saveWorkoutSessionDrafts, type WorkoutSessionDrafts } from '../../lib/workout-session-drafts';
 import { getTargetForSet, parseRestTime } from '../../utils/workout';
 
 interface ActiveWorkoutScreenProps {
+  userId: string;
+  planId: string | null;
   day: WorkoutDay;
   initialExercise: Exercise | null;
   onClose: () => void;
@@ -21,6 +24,8 @@ const REST_TIMER_PRESETS = [60, 90, 120];
 const getNowMs = () => new Date().getTime();
 
 export const ActiveWorkoutScreen = ({
+  userId,
+  planId,
   day,
   initialExercise,
   onClose,
@@ -47,12 +52,13 @@ export const ActiveWorkoutScreen = ({
   const [showExerciseCompleteConfirm, setShowExerciseCompleteConfirm] =
     useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-
-  const [currentWeight, setCurrentWeight] = useState('');
-  const [currentReps, setCurrentReps] = useState('');
+  const [exerciseDrafts, setExerciseDrafts] = useState<WorkoutSessionDrafts>(() =>
+    loadWorkoutSessionDrafts(userId, planId, day.id)
+  );
 
   const currentEx = queue[0];
   const nextEx = queue.length > 1 ? queue[1] : null;
+  const currentExSetCount = currentEx?.sets ?? 0;
 
   const totalExCount = day.exercises.length;
   const completedCount = totalExCount - queue.length;
@@ -63,7 +69,7 @@ export const ActiveWorkoutScreen = ({
     setTimeLeft(0);
 
     setSetNum((prevSetNum) => {
-      if (prevSetNum < currentEx.sets) {
+      if (prevSetNum < currentExSetCount) {
         return prevSetNum + 1;
       }
 
@@ -76,7 +82,11 @@ export const ActiveWorkoutScreen = ({
 
       return 1;
     });
-  }, [currentEx.sets]);
+  }, [currentExSetCount]);
+
+  useEffect(() => {
+    saveWorkoutSessionDrafts(userId, planId, day.id, exerciseDrafts);
+  }, [day.id, exerciseDrafts, planId, userId]);
 
   useEffect(() => {
     if (!isResting || restEndAt === null) return;
@@ -117,20 +127,34 @@ export const ActiveWorkoutScreen = ({
     };
   }, [handleRestComplete, isResting, timeLeft]);
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      if (currentEx?.previous && !isResting) {
-        setCurrentWeight(currentEx.previous.weight.toString());
-      } else {
-        setCurrentWeight('');
-      }
-      setCurrentReps('');
-    }, 0);
+  const updateExerciseDraft = (
+    exerciseId: string,
+    updater: (draft: { sets: Array<{ reps: string; weight: string }>; note: string }) => {
+      sets: Array<{ reps: string; weight: string }>;
+      note: string;
+    }
+  ) => {
+    setExerciseDrafts((current) => {
+      const baseDraft = current[exerciseId] ?? {
+        sets: Array.from({ length: currentEx?.sets ?? 0 }).map(() => ({ reps: '', weight: '' })),
+        note: '',
+      };
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [currentEx, isResting]);
+      return {
+        ...current,
+        [exerciseId]: updater(baseDraft),
+      };
+    });
+  };
+
+  const currentExerciseDraft = currentEx
+    ? exerciseDrafts[currentEx.id] ?? {
+        sets: Array.from({ length: currentEx.sets }).map(() => ({ reps: '', weight: '' })),
+        note: '',
+      }
+    : { sets: [], note: '' };
+
+  const currentSetDraft = currentExerciseDraft.sets[setNum - 1] ?? { reps: '', weight: '' };
 
   const startRestTimer = () => {
     const restSeconds = parseRestTime(currentEx.rest);
@@ -215,6 +239,10 @@ export const ActiveWorkoutScreen = ({
       : `${normalizedWeight} kg`;
   };
 
+  if (!currentEx) {
+    return null;
+  }
+
   if (isCompleted) {
     return (
       <div className="absolute inset-0 z-[100] bg-emerald-500 flex flex-col items-center justify-center p-6 text-zinc-950 animate-in fade-in duration-300">
@@ -245,9 +273,12 @@ export const ActiveWorkoutScreen = ({
       100,
       Math.max(0, 100 - (timeLeft / totalRest) * 100)
     );
+    const currentLoggedWeight = currentExerciseDraft.sets[setNum - 1]?.weight?.trim();
+    const nextExerciseDraft = nextEx ? exerciseDrafts[nextEx.id] : undefined;
+    const nextExerciseFirstWeight = nextExerciseDraft?.sets[0]?.weight?.trim();
     const nextWeight = setNum < currentEx.sets
-      ? formatWeight(currentWeight.trim() ? currentWeight : currentEx.previous?.weight)
-      : formatWeight(nextEx?.previous?.weight);
+      ? formatWeight(currentLoggedWeight || currentEx.previous?.weight)
+      : formatWeight(nextExerciseFirstWeight || nextEx?.previous?.weight);
 
     return (
       <div className="absolute inset-0 z-[100] bg-zinc-950 text-white flex flex-col animate-in fade-in duration-300">
@@ -488,8 +519,15 @@ export const ActiveWorkoutScreen = ({
             </label>
             <input
               type="number"
-              value={currentWeight}
-              onChange={(e) => setCurrentWeight(e.target.value)}
+              value={currentSetDraft.weight}
+              onChange={(e) =>
+                updateExerciseDraft(currentEx.id, (draft) => ({
+                  ...draft,
+                  sets: draft.sets.map((entry, index) =>
+                    index === setNum - 1 ? { ...entry, weight: e.target.value } : entry
+                  ),
+                }))
+              }
               className="w-full bg-zinc-50 border-2 border-zinc-200 rounded-2xl text-center py-6 text-3xl font-bold text-zinc-900 focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-zinc-300"
               placeholder="0"
             />
@@ -500,12 +538,39 @@ export const ActiveWorkoutScreen = ({
             </label>
             <input
               type="number"
-              value={currentReps}
-              onChange={(e) => setCurrentReps(e.target.value)}
+              value={currentSetDraft.reps}
+              onChange={(e) =>
+                updateExerciseDraft(currentEx.id, (draft) => ({
+                  ...draft,
+                  sets: draft.sets.map((entry, index) =>
+                    index === setNum - 1 ? { ...entry, reps: e.target.value } : entry
+                  ),
+                }))
+              }
               className="w-full bg-zinc-50 border-2 border-zinc-200 rounded-2xl text-center py-6 text-3xl font-bold text-zinc-900 focus:outline-none focus:border-emerald-500 transition-colors placeholder:text-zinc-300"
               placeholder="0"
             />
           </div>
+        </div>
+
+        <div className="mt-6">
+          <label className="mb-2 block text-sm font-bold text-zinc-900">
+            Nota esercizio
+          </label>
+          <p className="mb-3 text-sm text-zinc-500">
+            Salvi un appunto su come è andata. Resta disponibile su questo dispositivo.
+          </p>
+          <textarea
+            value={currentExerciseDraft.note}
+            onChange={(event) =>
+              updateExerciseDraft(currentEx.id, (draft) => ({
+                ...draft,
+                note: event.target.value,
+              }))
+            }
+            placeholder="Es. tecnica migliore, fatica alta, aumentare carico..."
+            className="h-28 w-full resize-none rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none"
+          />
         </div>
       </div>
 
