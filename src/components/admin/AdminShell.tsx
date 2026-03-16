@@ -78,20 +78,24 @@ export const AdminShell = ({
         void navigate({ to: '/admin/users' });
       },
     },
-    {
-      id: 'personal',
-      label: 'Le mie schede',
-      shortLabel: 'PROFILO',
-      icon: FileText,
-      onClick: () => {
-        if (!currentUser) return;
-        void navigate({
-          to: '/admin/users/$userId',
-          params: { userId: currentUser.id },
-        });
-      },
-      disabled: !currentUser,
-    },
+    ...(currentUser?.canUsePersonalApp
+      ? [
+          {
+            id: 'personal' as const,
+            label: 'Le mie schede',
+            shortLabel: 'PROFILO',
+            icon: FileText,
+            onClick: () => {
+              if (!currentUser) return;
+              void navigate({
+                to: '/admin/users/$userId',
+                params: { userId: currentUser.id },
+              });
+            },
+            disabled: !currentUser,
+          },
+        ]
+      : []),
   ];
 
   const isItemActive = (item: NavItem) => section === item.id;

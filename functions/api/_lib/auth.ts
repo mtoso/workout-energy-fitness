@@ -28,6 +28,7 @@ export const toAuthUser = (row: Pick<UserRow, 'id' | 'email' | 'full_name' | 'us
   status: row.status,
   coachUserId: row.coach_user_id,
   canManageClients: Boolean(row.is_admin) || row.user_type === 'coach',
+  canUsePersonalApp: row.user_type === 'client' || (row.user_type === 'coach' && !row.is_admin),
 });
 
 export const getSessionCookieName = (env: Env) =>

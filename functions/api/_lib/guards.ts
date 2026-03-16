@@ -67,6 +67,10 @@ export const requireManagedUserAccess = async (
     return fail(404, 'user_not_found', 'Utente non trovato.');
   }
 
+  if (auth.user.id === targetUser.id && !auth.user.canUsePersonalApp) {
+    return fail(403, 'forbidden', 'Questo account non usa l’app personale.');
+  }
+
   if (auth.user.isAdmin) {
     return targetUser;
   }

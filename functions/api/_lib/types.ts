@@ -19,6 +19,7 @@ export interface AuthUser {
   status: UserStatus;
   coachUserId: string | null;
   canManageClients: boolean;
+  canUsePersonalApp: boolean;
 }
 
 export interface AuthSession {

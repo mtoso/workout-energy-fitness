@@ -38,6 +38,20 @@ const requireManager = async () => {
   return user;
 };
 
+const requirePersonalApp = async () => {
+  const user = await requireAuthenticated();
+
+  if (!user.canUsePersonalApp) {
+    if (user.canManageClients) {
+      throw redirect({ to: '/admin/users' });
+    }
+
+    throw redirect({ to: '/login' });
+  }
+
+  return user;
+};
+
 const rootRoute = createRootRoute({
   component: AppRoot,
 });
@@ -57,21 +71,21 @@ const acceptInviteRoute = createRoute({
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: requireAuthenticated,
+  beforeLoad: requirePersonalApp,
   component: () => <UserAppPage screen="home" />,
 });
 
 const schedaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/scheda',
-  beforeLoad: requireAuthenticated,
+  beforeLoad: requirePersonalApp,
   component: () => <UserAppPage screen="scheda" />,
 });
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/profile',
-  beforeLoad: requireAuthenticated,
+  beforeLoad: requirePersonalApp,
   component: () => <UserAppPage screen="profile" />,
 });
 
@@ -95,14 +109,26 @@ const adminUsersRoute = createRoute({
 const adminUserWorkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users/$userId',
-  beforeLoad: requireManager,
+  beforeLoad: async ({ params }) => {
+    const user = await requireManager();
+    if (user.id === params.userId && !user.canUsePersonalApp) {
+      throw redirect({ to: '/admin/users' });
+    }
+    return user;
+  },
   component: AdminUserDetailPage,
 });
 
 const adminWorkoutEditorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/admin/users/$userId/workouts/$planId',
-  beforeLoad: requireManager,
+  beforeLoad: async ({ params }) => {
+    const user = await requireManager();
+    if (user.id === params.userId && !user.canUsePersonalApp) {
+      throw redirect({ to: '/admin/users' });
+    }
+    return user;
+  },
   component: AdminWorkoutEditorPage,
 });
 
